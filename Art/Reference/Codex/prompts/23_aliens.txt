@@ -1,0 +1,8 @@
+Use your built-in image_gen tool (the imagegen skill in its default built-in mode). Do NOT use the CLI fallback script and do not write any code. After generating, copy the final image into the current working directory with the exact filename given below, then reply with just that filename. Do not modify or create any other files.
+Art direction: AAA isometric sci-fi game (think XCOM 2, Helldivers 2, Starcraft 2), realistic PBR materials, high detail, dark purple-grey moon outpost lit by cyan and amber lights.
+Task: generate ONE alien creature design sheet with THREE separate creatures side by side (left, middle, right), each fully visible and centred in its third with empty space around it, all seen from the same high 3/4 front view (about 30 degrees from above), standing on nothing, plain pure white background, soft even studio lighting, no text, no labels. Shared design language: insectoid xenomorphs with dark purple-black chitin plates, wet magenta flesh between plates, glowing toxic-green eyes and sacs, sharp mandibles; menacing, AAA creature design.
+1 left: SKITTER: small fast six-legged swarm bug, about 1 m long, long thin spiky legs, low flat armoured body, big mandibles;
+2 middle: SPITTER: medium four-legged acid spitter, about 1.5 m tall, raised body with a large glowing green acid sac on its back and a tubular spitting maw, thinner legs;
+3 right: BRUTE: huge heavy armoured beast, about 2.5 m tall, walks on four thick legs plus two massive front crushing claws held up, thick overlapping armour plates on its back, small glowing eyes.
+Landscape 3:2 image.
+Filename: env_aliens.png

@@ -1,0 +1,12 @@
+Use your built-in image_gen tool (the imagegen skill in its default built-in mode). Do NOT use the CLI fallback script and do not write any code. After generating, copy the final image into the current working directory with the exact filename given below, then reply with just that filename. Do not modify or create any other files.
+
+Attached Image 1 is a screenshot of our isometric sci-fi extraction game (top-down isometric camera, armored space marine, insect-like aliens, dark moon outpost). Its current HUD is cluttered: we are REMOVING the minimap / radar, the compass strip, the visor frame and all background patterns (hexagons, scanlines).
+Task: generate ONE new HUD design concept screenshot for this game: a premium, clean, MINIMAL and modern sci-fi HUD with AAA polish (think Helldivers 2, The Division 2, Destiny 2, Apex Legends level of craft), very readable over a dark scene, lots of breathing room, crisp thin typography, subtle glass panels with soft glow, cyan as main accent, amber for health and warnings, red for danger.
+Include ONLY:
+- bottom-left: operative vitals: a live 3D-rendered HELMET PORTRAIT of the marine in a sleek angled frame, the name "ORBITAL MARSHAL", a SHIELD bar (cyan, segmented, with a subtle energy shimmer) stacked above a HEALTH bar (amber), numeric values, and three compact ability slots [G] grenade, [SPACE] dash, [Q] scan with radial cooldown;
+- bottom-right: weapon block: a live 3D render of the equipped weapon in profile (not a flat icon), the weapon name, a large elegant ammo counter "24 / 32", a thin cell charge bar, and three small loadout slot indicators 1 2 3;
+- top-right: a compact objective tracker "CLEAR XENO CAMPS 1/4" with small progress ticks;
+- top-center: only a small area name that appears when entering a zone, and a red "HOSTILES ENGAGED" alert;
+- in the world: a cyan targeting reticle at the mouse with a thin ammo arc, slim enemy health bars over aliens, floating amber damage numbers, a thin cyan ring under the player.
+16:9 landscape image.
+Filename: hud_v3_mockup.png

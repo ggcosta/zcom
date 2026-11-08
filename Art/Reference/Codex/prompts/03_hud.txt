@@ -1,0 +1,13 @@
+Use your built-in image_gen tool (the imagegen skill in its default built-in mode). Do NOT use the CLI fallback script and do not write any code. Attached Image 1 is a design reference: the "Orbital Marshal", the starter space-marine character of an isometric sci-fi extraction shooter (Unity, stylized-but-serious AAA art direction, think XCOM 2 / Helldivers 2 / Escape from Duckov readability). After generating, copy the final image into the current working directory with the exact filename given below, then reply with just that filename. Do not modify or create any other files.
+
+Task: generate ONE new image: an AAA-quality IN-GAME HUD MOCKUP (a 16:9 gameplay screenshot) for this game, to be used as the reference for implementing the HUD in Unity.
+Scene: isometric top-down camera (about 50 degrees pitch) on a dark lunar outpost at night (dusty purple-grey regolith, metal deck plates, neon-lit prefab buildings); the Orbital Marshal from Image 1 is small in the centre aiming an energy carbine at two insect-like aliens; cyan plasma bolts.
+HUD (clean, minimal, highly legible, angular sci-fi panels with chamfered/cut corners, thin cyan outlines, translucent dark graphite fills, condensed technical sans-serif typography similar to Rajdhani, cyan primary accent #3FE0F0, amber secondary #E8A33A, red only for danger):
+- Bottom-left: vitals cluster with a small helmet portrait of the Orbital Marshal, callsign "ORBITAL MARSHAL", a segmented slanted HEALTH bar with number "86", a thinner SHIELD bar above it.
+- Next to it: three ability slots with icons and key hints: grenade [G], dash [SPACE], scan pulse [Q], one of them on cooldown with a radial sweep.
+- Bottom-right: weapon panel with the "ION CARBINE" silhouette, big cell count "24 / 32", a thin segmented cell bar, and three small weapon slot tabs 1-2-3.
+- Top-centre: a compass/heading strip with the area name "KEPLER-7 OUTPOST" and a small red "2 HOSTILES ENGAGED" warning.
+- Top-right: small extraction objective panel "EXTRACTION  04:32".
+- In the world: a precise crosshair at the cursor, a floating "[E] OPEN SUPPLY CRATE" interaction prompt near a crate, small floating damage numbers.
+Text must be spelled exactly as written. Wide 16:9 landscape image.
+Filename: hud_mockup.png

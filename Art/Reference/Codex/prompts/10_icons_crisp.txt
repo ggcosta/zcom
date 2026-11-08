@@ -1,0 +1,8 @@
+Use your built-in image_gen tool (the imagegen skill in its default built-in mode). Do NOT use the CLI fallback script and do not write any code. Attached Image 1 is a design reference: the "Orbital Marshal", the starter character of an isometric sci-fi exploration game (Unity, stylized-but-serious AAA art direction). After generating, copy the final image into the current working directory with the exact filename given below, then reply with just that filename. Do not modify or create any other files.
+
+Task: generate ONE new image: a sheet of 6 flat game UI ICONS.
+- Style: flat solid pure WHITE glyphs, crisp hard edges, NO glow, NO blur, NO bloom, NO shadow, no gradients. Bold geometric sci-fi style with small internal cut-out details (negative space lines) so they read like premium HUD icons.
+- TRANSPARENT background (real alpha). 3 x 2 grid, generous equal spacing, each icon centered in its own equal cell at the same visual size. No text, no frames.
+- Icons in order: 1 round plasma grenade with a pin ring, 2 dash: double forward chevrons with three speed lines, 3 scan pulse: radar dish/sweep with concentric arcs, 4 extraction dropship seen from the front, 5 shield with a plus cross, 6 energy cell battery with a lightning bolt.
+Landscape 3:2 image.
+Filename: hud_icons_crisp.png

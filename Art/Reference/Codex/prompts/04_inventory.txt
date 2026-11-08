@@ -1,0 +1,13 @@
+Use your built-in image_gen tool (the imagegen skill in its default built-in mode). Do NOT use the CLI fallback script and do not write any code. Attached Image 1 is a design reference: the "Orbital Marshal", the starter space-marine character of an isometric sci-fi extraction shooter (Unity, stylized-but-serious AAA art direction, think XCOM 2 / Helldivers 2 / Escape from Duckov readability). After generating, copy the final image into the current working directory with the exact filename given below, then reply with just that filename. Do not modify or create any other files.
+
+Task: generate ONE new image: an AAA-quality INVENTORY SCREEN MOCKUP (16:9 game screenshot) for this game, in the style of Escape from Duckov's inventory but with a premium sci-fi look, to be used as the reference for implementing it in Unity.
+Background: the isometric gameplay view darkened and blurred behind the UI.
+UI style: angular panels with chamfered corners, thin cyan (#3FE0F0) outlines, translucent dark graphite fills, amber (#E8A33A) secondary accents, rarity colours (grey common, blue rare, purple epic, gold legendary), condensed technical sans-serif typography similar to Rajdhani.
+Layout:
+- Left: "LOADOUT" panel with a full-body render of the Orbital Marshal from Image 1, three weapon slots (ION CARBINE equipped, NOVA SCATTER, empty) and stats (VITALS 100/100, GRENADES 2/2).
+- Centre: "BACKPACK" grid of 6 x 4 square slots with item icons (rock chunks "STONE" x12, gold nuggets "GOLD" x5, a glowing green crystal "XENITE" x3, a weapon), stack counts in the slot corners, one item being dragged with a ghost icon.
+- Right: "SUPPLY CRATE" container grid 3 x 3 with a few items and a "[F] TAKE ALL" button.
+- A tooltip card hovering over the xenite crystal with its name, rarity "RARE", description and stats.
+- Bottom hint bar with key hints (drag, split, quick move, drop, close).
+Text must be spelled exactly as written. Wide 16:9 landscape image.
+Filename: inventory_mockup.png

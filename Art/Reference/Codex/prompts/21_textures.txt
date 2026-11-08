@@ -1,0 +1,8 @@
+Use your built-in image_gen tool (the imagegen skill in its default built-in mode). Do NOT use the CLI fallback script and do not write any code. After generating, copy the final image into the current working directory with the exact filename given below, then reply with just that filename. Do not modify or create any other files.
+Task: generate ONE image containing FOUR seamless tileable material textures for an isometric sci-fi game, arranged as a 2x2 grid of perfectly square tiles with thin white gaps, each tile viewed perfectly straight top-down (orthographic, no perspective, no lighting gradient, no vignette, uniform even lighting), photoreal PBR albedo look, no text:
+1 top-left: MOON REGOLITH ground: fine purple-grey dust with scattered small pebbles, faint footprints and subtle tonal variation;
+2 top-right: DARK VOLCANIC ROCK surface: fractured basalt with cracks and lighter dust in crevices;
+3 bottom-left: WORN SCI-FI METAL HULL PANELS: gunmetal plates with panel seams, rivets, scratches, faded orange hazard paint patches;
+4 bottom-right: ALIEN HIVE CREEP: dark purple organic membrane with veins and small glowing green nodules.
+Square 1:1 image.
+Filename: env_textures.png

@@ -1,0 +1,14 @@
+Use your built-in image_gen tool (the imagegen skill in its default built-in mode). Do NOT use the CLI fallback script and do not write any code. After generating, copy the final image into the current working directory with the exact filename given below, then reply with just that filename. Do not modify or create any other files.
+
+Attached Image 1 is our current game HUD (too flat and basic). Task: generate ONE new HUD concept screenshot for the same isometric sci-fi extraction game (top-down isometric camera over a dark moon outpost at night, armored space marine with a cyan ring under his feet in the centre, a few insect-like aliens nearby).
+Make the HUD feel like a futuristic HOLOGRAPHIC HELMET VISOR: dynamic, immersive, premium AAA (think Dead Space, Halo, Destiny, Helldivers 2). Ideas to include:
+- cyan holographic elements with glow and bloom, thin scanlines, subtle hexagon patterns, slight perspective tilt of the side panels as if projected on a curved visor, faint curved visor frame at the screen corners;
+- bottom-left: a circular MOTION TRACKER radar with a sweeping arc and red blips, next to curved SHIELD (cyan) and HEALTH (amber) arc gauges and a small marine portrait;
+- ability icons for grenade, dash and scan as hexagonal holo-buttons with radial cooldown;
+- bottom-right: angular weapon readout with a cyan wireframe hologram of the weapon, large ammo digits and a curved cell bar;
+- dynamic reticle around the mouse cursor with a circular ammo arc and hit-marker ticks;
+- top: thin curved compass with objective markers, an area name, a red pulsing alert "HOSTILES ENGAGED";
+- top-right: objective tracker with progress pips; red directional damage indicator arcs at the screen edges;
+- floating holographic enemy health bars and damage numbers in the world.
+Clean and readable, not cluttered. 16:9 landscape image.
+Filename: hud_v2_mockup.png

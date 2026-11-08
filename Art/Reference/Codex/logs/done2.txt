@@ -1,0 +1,4 @@
+07_icons exit 0
+08_items exit 0
+06_portrait exit 0
+05_detail_sheet exit 0

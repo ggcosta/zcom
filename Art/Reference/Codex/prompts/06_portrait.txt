@@ -1,0 +1,7 @@
+Use your built-in image_gen tool (the imagegen skill in its default built-in mode). Do NOT use the CLI fallback script and do not write any code. Attached Image 1 is a design reference: the "Orbital Marshal", the starter character of an isometric sci-fi exploration game (Unity, stylized-but-serious AAA art direction). After generating, copy the final image into the current working directory with the exact filename given below, then reply with just that filename. Do not modify or create any other files.
+
+Task: generate ONE new image: a HUD CHARACTER PORTRAIT of this character for the game's vitals panel.
+- Head-and-shoulders bust, three-quarter view facing slightly to the viewer's right, helmet on, glowing cyan T-visor, high collar, top of the oversized left pauldron with the amber chevron visible.
+- Premium stylized-realistic 3D render, crisp cyan rim light from the right, soft key light, weathered steel and graphite materials.
+- TRANSPARENT background (real alpha), subject centered, filling about 85% of the frame, square 1:1 image. No text, no frame, no border.
+Filename: hud_portrait_marshal.png

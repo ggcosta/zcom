@@ -1,0 +1,30 @@
+# Unity
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+sysinfo.txt
+crashlytics-build.properties
+
+# IDE / OS
+.vscode/
+.idea/
+.vs/
+*.csproj
+*.sln
+*.slnx
+*.suo
+*.user
+.DS_Store
+
+# Raw AI sculpts for the environment props (100-560 MB of high-poly GLBs; regenerate from the crops
+# in Art/Reference/Codex/env3d/*.png with Hunyuan3D-2, seed 1234 - see README). The marine sculpt is kept.
+Art/Reference/Codex/env3d/*.glb

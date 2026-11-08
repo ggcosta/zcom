@@ -1,0 +1,11 @@
+Use your built-in image_gen tool (the imagegen skill in its default built-in mode). Do NOT use the CLI fallback script and do not write any code. After generating, copy the final image into the current working directory with the exact filename given below, then reply with just that filename. Do not modify or create any other files.
+
+Attached Image 1 is the original concept of our playable character, the "Orbital Marshal", a badass armored SPACE MARINE for an isometric sci-fi extraction game (AAA quality, in the spirit of Halo ODST, Gears of War and Helldivers 2 armor design).
+Task: generate ONE clean CHARACTER TURNAROUND sheet intended as input for 3D model generation:
+- exactly three full-body views side by side, same scale, same height, perfectly aligned: FRONT view, LEFT SIDE view, BACK view;
+- neutral A-POSE: standing straight, feet shoulder-width apart, arms held down and slightly away from the body (about 25 degrees), open relaxed hands, NO weapon, nothing held;
+- orthographic camera at chest height, no perspective distortion, no dramatic lighting: soft even studio light, plain pure white background, no floor shadow, no text, no labels, no props;
+- design faithful to Image 1: heavy, bulky, realistic human proportions (about 1.9 m, broad shoulders, powerful legs), layered weathered gunmetal-steel armor plates over a dark graphite padded undersuit, oversized LEFT shoulder pauldron with two amber chevrons, smaller right shoulder plate, high armored collar, rounded faceted helmet with a glowing cyan T-shaped visor, small antenna on the left of the helmet, chest plate with two small cyan lights, segmented abdominal armor, utility belt with pouches and a hip scanner module with a small cyan screen on the right hip, armored gloves, thick thigh plates, hexagonal knee pads, shin guards with amber stripes, chunky boots, boxy extraction backpack with a vertical cyan light strip, and a SHORT dark tattered cape hanging from the shoulders down to the back of the knees with a light grey inverted-V stripe;
+- realistic battle-worn materials: scratches, chipped paint on edges, dust; highly detailed, photoreal 3D render look.
+Landscape 3:2 image.
+Filename: marshal_turnaround.png

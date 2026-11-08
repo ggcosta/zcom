@@ -1,0 +1,10 @@
+Use your built-in image_gen tool (the imagegen skill in its default built-in mode). Do NOT use the CLI fallback script and do not write any code. After generating, copy the final image into the current working directory with the exact filename given below, then reply with just that filename. Do not modify or create any other files.
+Art direction: AAA isometric sci-fi game (think XCOM 2, Helldivers 2), realistic PBR materials, weathered, high detail, consistent with a dark purple-grey moon outpost lit by cyan and amber lights.
+Layout: a 2x2 grid of FOUR separate objects, each fully visible and centred in its own quadrant with generous empty space around it, all seen from the same high 3/4 view (about 35 degrees from above), on a plain pure white background, soft even studio lighting, no cast shadows on the background, no text, no labels, no frames.
+Objects:
+1 top-left: a LANDED DROP POD (conical armored capsule, scorched heat shield, open hatch with amber light inside, four landing struts);
+2 top-right: a STACK OF TWO SCI-FI CARGO CONTAINERS (military green and gunmetal, reinforced corners, stencil markings, amber lights);
+3 bottom-left: a MINING DRILL RIG (lattice tower with a big drill bit, orange industrial paint, hoses, small cabin);
+4 bottom-right: a CLUSTER OF FOUR INDUSTRIAL FUEL CANISTERS on a pallet (cylindrical, hazard stripes, cyan gauge lights).
+Landscape 3:2 image.
+Filename: env_props.png

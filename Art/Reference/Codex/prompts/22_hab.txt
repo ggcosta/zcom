@@ -1,0 +1,6 @@
+Use your built-in image_gen tool (the imagegen skill in its default built-in mode). Do NOT use the CLI fallback script and do not write any code. After generating, copy the final image into the current working directory with the exact filename given below, then reply with just that filename. Do not modify or create any other files.
+Art direction: AAA isometric sci-fi game (think XCOM 2, Helldivers 2, Starcraft 2), realistic PBR materials, high detail, dark purple-grey moon outpost lit by cyan and amber lights.
+Task: generate ONE concept image of a small MODULAR PREFAB COLONY HABITAT building (one storey, about 8 m x 6 m, 3 m tall) for a mining outpost, seen from a high 3/4 view (about 35 degrees from above), isolated on a plain pure white background, soft even studio lighting, no text.
+Design: light grey insulated wall panels with dark grey structural frame ribs every 2 m, reinforced corner pillars, a sliding airlock door with a glowing cyan frame, narrow horizontal glowing cyan window strips, an orange hazard trim band along the base, a dark flat roof with vents, pipes, a small satellite dish and a red beacon light, dust settled on ledges, light wear and scratches.
+Landscape 3:2 image.
+Filename: env_hab.png

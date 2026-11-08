@@ -1,0 +1,21 @@
+Use your built-in image_gen tool (the imagegen skill in its default built-in mode). Do NOT use the CLI fallback script and do not write any code. Attached Image 1 is a design reference: the "Orbital Marshal", the starter space-marine character of an isometric sci-fi extraction shooter (Unity, stylized-but-serious AAA art direction, think XCOM 2 / Helldivers 2 / Escape from Duckov readability). After generating, copy the final image into the current working directory with the exact filename given below, then reply with just that filename. Do not modify or create any other files.
+
+Task: generate ONE new image: a clean orthographic CHARACTER MODEL SHEET of the Orbital Marshal, intended as a reference for a 3D artist modelling it in Blender.
+
+Design (keep the identity of Image 1):
+- Helmet: angular, faceted, with the signature T-shaped glowing cyan visor; high armored collar.
+- Oversized asymmetric pauldron on the character's LEFT shoulder with a large chevron emblem; the right shoulder has a smaller plate.
+- Compact back drape/cape hanging from the shoulders at the back only, split into two panels, ending at the back of the knees, with a faded light chevron stripe.
+- Boxy extraction backpack with a vertical glowing cyan light strip.
+- Utility belt with pouches; a scanner module with a small cyan screen on the right hip.
+- Segmented armored arms and legs, large hexagonal knee plates, chunky heavy boots.
+Revisions (improve readability from a top-down isometric camera):
+- Two-tone armor: lighter weathered gunmetal/steel plates (about #8C9198) on helmet, shoulders, chest plate, forearms, thigh and shin plates, over a darker graphite (#35383D) undersuit and secondary plates.
+- Small amber (#E8A33A) caution accents (a few stripes and markings only). Cyan (#3FE0F0) emissive only on visor, backpack strip, scanner screen and two small chest lights.
+- Slightly heroic stylized proportions: broad shoulders, slightly oversized helmet, hands and boots. Not chibi.
+Layout and rendering:
+- Four full-body views side by side at identical scale, feet on the same baseline: FRONT, LEFT SIDE, BACK, 3/4 FRONT.
+- Neutral A-pose (arms angled about 30 degrees down from horizontal, slightly away from the body), relaxed open hands, NO weapon.
+- Plain flat light-grey background, soft even studio lighting, orthographic look with no perspective distortion, no dramatic shadows, high detail, clean silhouette edges, landscape 3:2 image.
+- Only text allowed: small view labels FRONT, SIDE, BACK, 3/4 under each view.
+Filename: orbital_marshal_model_sheet.png

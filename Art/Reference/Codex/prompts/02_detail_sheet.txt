@@ -1,0 +1,12 @@
+Use your built-in image_gen tool (the imagegen skill in its default built-in mode). Do NOT use the CLI fallback script and do not write any code. Attached Image 1 is a design reference: the "Orbital Marshal", the starter space-marine character of an isometric sci-fi extraction shooter (Unity, stylized-but-serious AAA art direction, think XCOM 2 / Helldivers 2 / Escape from Duckov readability). After generating, copy the final image into the current working directory with the exact filename given below, then reply with just that filename. Do not modify or create any other files.
+
+Task: generate ONE new image: a DETAIL / PART SHEET for the Orbital Marshal, as modelling reference for its key parts, matching Image 1's design language.
+Use the revised palette: lighter weathered gunmetal/steel plates (#8C9198), graphite undersuit and secondary plates (#35383D), cyan (#3FE0F0) emissives, small amber (#E8A33A) accents.
+Panels on a plain light-grey background, each part shown in clean orthographic views with soft even lighting:
+1. HELMET: front, side, back and top views (T-shaped cyan visor, faceted shell, high collar ring, small antenna on the left side).
+2. LEFT PAULDRON (large, with chevron emblem): front and side views.
+3. BACKPACK: back and side views (boxy, vertical cyan light strip, side canisters, top handle).
+4. WEAPON: "ION CARBINE", a compact sci-fi ENERGY bullpup carbine in the same design language (graphite and steel panels, a glowing cyan energy cell behind the grip, three cyan coil rings around the barrel shroud, short top optic, angular stock). Side view and top view.
+5. SCANNER MODULE (hip-mounted, small cyan screen): front and side views.
+Only text allowed: short panel labels HELMET, PAULDRON, BACKPACK, ION CARBINE, SCANNER. Landscape 3:2 image.
+Filename: orbital_marshal_detail_sheet.png

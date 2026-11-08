@@ -1,0 +1,10 @@
+Use your built-in image_gen tool (the imagegen skill in its default built-in mode). Do NOT use the CLI fallback script and do not write any code. After generating, copy the final image into the current working directory with the exact filename given below, then reply with just that filename. Do not modify or create any other files.
+Art direction: AAA isometric sci-fi game (think XCOM 2, Helldivers 2), realistic PBR materials, weathered, high detail, consistent with a dark purple-grey moon outpost lit by cyan and amber lights.
+Layout: a 2x2 grid of FOUR separate objects, each fully visible and centred in its own quadrant with generous empty space around it, all seen from the same high 3/4 view (about 35 degrees from above), on a plain pure white background, soft even studio lighting, no cast shadows on the background, no text, no labels, no frames.
+Objects (alien hive biology: dark purple chitin and wet flesh, ribbed and organic, glowing toxic-green pustules and veins):
+1 top-left: a tall organic HIVE SPIRE tower;
+2 top-right: an ALIEN EGG CLUSTER (five leathery eggs glowing green from inside, on a fleshy base);
+3 bottom-left: a curved organic HIVE ARCH / ribcage-like root growth;
+4 bottom-right: a cluster of glowing ALIEN TENDRIL PLANTS with bulbous tips.
+Landscape 3:2 image.
+Filename: env_hive.png

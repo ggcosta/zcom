@@ -1,0 +1,7 @@
+Use your built-in image_gen tool (the imagegen skill in its default built-in mode). Do NOT use the CLI fallback script and do not write any code. Attached Image 1 is a design reference: the "Orbital Marshal", the starter character of an isometric sci-fi exploration game (Unity, stylized-but-serious AAA art direction). After generating, copy the final image into the current working directory with the exact filename given below, then reply with just that filename. Do not modify or create any other files.
+
+Task: generate ONE new image: a sheet of 6 INVENTORY ITEM ICONS for this game, in the style of premium game loot icons (rendered 3D objects, three-quarter top view, soft studio light, subtle rim light, stylized-realistic materials, no background clutter).
+- TRANSPARENT background (real alpha). 3 x 2 grid with generous equal spacing; each item centered in its own equal cell at a similar visual size. No text, no labels, no frames.
+- Items, in order: 1 STONE: a pile of grey lunar rock chunks; 2 GOLD: a small pile of raw gold nuggets; 3 XENITE: a glowing green alien crystal cluster; 4 MEDKIT: a compact graphite sci-fi med case with a white cross and cyan light; 5 ENERGY CELL: a cylindrical canister with a glowing cyan core and amber bands; 6 SUPPLY CRATE: a small graphite and steel sci-fi crate with cyan lights.
+Landscape 3:2 image.
+Filename: item_icons_sheet.png

@@ -1,0 +1,10 @@
+Use your built-in image_gen tool (the imagegen skill in its default built-in mode). Do NOT use the CLI fallback script and do not write any code. After generating, copy the final image into the current working directory with the exact filename given below, then reply with just that filename. Do not modify or create any other files.
+Art direction: AAA isometric sci-fi game (think XCOM 2, Helldivers 2), realistic PBR materials, weathered, high detail, consistent with a dark purple-grey moon outpost lit by cyan and amber lights.
+Layout: a 2x2 grid of FOUR separate objects, each fully visible and centred in its own quadrant with generous empty space around it, all seen from the same high 3/4 view (about 35 degrees from above), on a plain pure white background, soft even studio lighting, no cast shadows on the background, no text, no labels, no frames.
+Objects (moon rock formations, dark purple-grey basalt with lighter dusty tops, sharp fractured faces):
+1 top-left: a LARGE BOULDER CLUSTER of three fused angular boulders;
+2 top-right: a TALL JAGGED ROCK SPIRE;
+3 bottom-left: a FLAT LAYERED SLAB OUTCROP (stratified, wider than tall);
+4 bottom-right: a LONG CLIFF WALL SEGMENT (wide, tall, vertical fractured face).
+Landscape 3:2 image.
+Filename: env_rocks.png

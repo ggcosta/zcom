@@ -1,0 +1,8 @@
+Use your built-in image_gen tool (the imagegen skill in its default built-in mode). Do NOT use the CLI fallback script and do not write any code. After generating, copy the final image into the current working directory with the exact filename given below, then reply with just that filename. Do not modify or create any other files.
+
+Attached Image 1 shows the art direction of our video game character (graphite and weathered steel armor, cyan emissive lights, small amber accents).
+Task: generate ONE industrial-design PRODUCT SHEET for a handheld sci-fi PLASMA SCATTER device prop called "NOVA SCATTER" for the same video game, presented like a collectible replica / product-design render (no people, no action, no targets, no ammunition).
+Design: short and wide, heavy and blocky, a big hexagonal muzzle housing with an orange-magenta plasma glow inside, a rotating drum-shaped plasma chamber with glowing magenta vents in the middle, thick graphite body with steel armored side plates, pump-style fore-grip, chunky grip, compact stock, amber hazard stripes, panel lines and subtle edge wear.
+Layout on a plain light-grey studio background: large clean orthographic LEFT SIDE view on top, TOP view below it, and a small 3/4 perspective render in the corner. Soft even lighting, crisp edges, AAA game asset quality.
+Only text allowed: the label NOVA SCATTER. Landscape 3:2 image.
+Filename: prop_nova_scatter.png

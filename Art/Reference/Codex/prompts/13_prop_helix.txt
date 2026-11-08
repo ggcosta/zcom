@@ -1,0 +1,8 @@
+Use your built-in image_gen tool (the imagegen skill in its default built-in mode). Do NOT use the CLI fallback script and do not write any code. After generating, copy the final image into the current working directory with the exact filename given below, then reply with just that filename. Do not modify or create any other files.
+
+Attached Image 1 shows the art direction of our video game character (graphite and weathered steel armor, cyan emissive lights, small amber accents).
+Task: generate ONE industrial-design PRODUCT SHEET for a long handheld sci-fi BEAM EMITTER prop called "HELIX BEAM" for the same video game, presented like a collectible replica / product-design render (no people, no action, no targets).
+Design: long and sleek, an exposed twin helix coil of glowing green-cyan energy wrapped around a long emitter rail, a split-prong focusing emitter at the front, a large rear capacitor block with vents and green glowing cells, white ceramic and steel panels over a graphite frame, long top scope, stock with cheek rest, small amber markings, panel lines and subtle edge wear.
+Layout on a plain light-grey studio background: large clean orthographic LEFT SIDE view on top, TOP view below it, and a small 3/4 perspective render in the corner. Soft even lighting, crisp edges, AAA game asset quality.
+Only text allowed: the label HELIX BEAM. Landscape 3:2 image.
+Filename: prop_helix_beam.png

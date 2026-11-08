@@ -1,0 +1,8 @@
+Use your built-in image_gen tool (the imagegen skill in its default built-in mode). Do NOT use the CLI fallback script and do not write any code. Attached Image 1 is a design reference: the "Orbital Marshal", the starter character of an isometric sci-fi exploration game (Unity, stylized-but-serious AAA art direction). After generating, copy the final image into the current working directory with the exact filename given below, then reply with just that filename. Do not modify or create any other files.
+
+Task: generate ONE new image: a full-body HERO RENDER of this exact character for the inventory/loadout screen.
+- Full body visible head to boots, three-quarter front view facing slightly to the viewer's right, confident relaxed standing pose, hands empty and relaxed at the sides, cape hanging behind.
+- Match Image 1 exactly: faceted steel helmet with glowing cyan T-visor and amber stripe, high collar, oversized left pauldron with amber chevrons, two cyan chest lights, utility belt with scanner module on the right hip, hexagonal knee plates, chunky boots, dark cloth back drape.
+- Premium stylized-realistic 3D render, soft key light, crisp cyan rim light, weathered materials.
+- TRANSPARENT background (real alpha), no ground shadow, no text, no frame. Portrait 2:3 image, character filling about 90% of the height.
+Filename: loadout_marshal_fullbody.png

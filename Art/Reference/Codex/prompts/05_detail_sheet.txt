@@ -1,0 +1,11 @@
+Use your built-in image_gen tool (the imagegen skill in its default built-in mode). Do NOT use the CLI fallback script and do not write any code. Attached Image 1 is a design reference: the "Orbital Marshal", the starter character of an isometric sci-fi exploration game (Unity, stylized-but-serious AAA art direction). After generating, copy the final image into the current working directory with the exact filename given below, then reply with just that filename. Do not modify or create any other files.
+
+Task: generate ONE new image: an armor DETAIL / PART SHEET for this character, as 3D modelling reference. Palette: weathered gunmetal/steel plates (#8C9198), graphite undersuit and secondary plates (#35383D), cyan (#3FE0F0) emissive lights, amber (#E8A33A) hazard stripes.
+Panels on a plain light-grey background, each part in clean orthographic views with soft even studio lighting:
+1. HELMET: front, side, back and top views (faceted shell, T-shaped cyan visor, high collar ring, small antenna on the left side, amber stripe on top).
+2. LEFT PAULDRON (oversized, amber chevron emblem): front and side views.
+3. BACKPACK: back and side views (boxy, vertical cyan light strip, two side canisters with amber bands, top handle).
+4. SCANNER MODULE (hip-mounted, small cyan screen): front and side views.
+5. BOOT: side and front views (chunky, ridged sole, steel toe cap).
+Only text allowed: short labels HELMET, PAULDRON, BACKPACK, SCANNER, BOOT. Landscape 3:2 image.
+Filename: orbital_marshal_detail_sheet.png
