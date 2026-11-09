@@ -43,34 +43,39 @@ namespace Zcom.EditorTools
             EnsureFolder(GenDir + "/Textures");
 
             // ---------- Environment lighting ----------
+            // Low warm sun against a cool sky: warm key + cool fill gives every surface a readable light and shade
+            // side, and leaves room for the local lights (lamps, fires, hive glow) to carry each area's mood.
             RenderSettings.skybox = null;
             RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = new Color(0.26f, 0.29f, 0.42f);
-            RenderSettings.ambientEquatorColor = new Color(0.15f, 0.14f, 0.21f);
-            RenderSettings.ambientGroundColor = new Color(0.05f, 0.04f, 0.07f);
-            // low purple haze: distant cliffs fade, light sources bloom into it
+            RenderSettings.ambientSkyColor = new Color(0.17f, 0.24f, 0.37f);
+            RenderSettings.ambientEquatorColor = new Color(0.115f, 0.125f, 0.165f);
+            RenderSettings.ambientGroundColor = new Color(0.075f, 0.058f, 0.05f);
+            // thin blue haze: distant cliffs fade, light sources bloom into it
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.ExponentialSquared;
-            RenderSettings.fogDensity = 0.0105f;
-            RenderSettings.fogColor = new Color(0.075f, 0.065f, 0.11f);
+            RenderSettings.fogDensity = 0.0115f;
+            RenderSettings.fogColor = new Color(0.045f, 0.062f, 0.1f);
 
             var sunGo = new GameObject("Sun");
-            sunGo.transform.rotation = Quaternion.Euler(48f, -35f, 0f);
+            sunGo.transform.rotation = Quaternion.Euler(38f, -65f, 0f);   // side-back light for the 45-degree camera: long shadows towards the viewer
             var sun = sunGo.AddComponent<Light>();
             sun.type = LightType.Directional;
-            sun.color = new Color(0.86f, 0.88f, 1f);
-            sun.intensity = 2.1f;
+            sun.color = new Color(1f, 0.83f, 0.64f);
+            sun.intensity = 2.3f;
             sun.shadows = LightShadows.Soft;
-            sun.shadowStrength = 0.85f;
+            sun.shadowStrength = 0.9f;
+            sun.shadowBias = 0.6f;
+            sun.shadowNormalBias = 0.5f;
             RenderSettings.sun = sun;
 
-            var rimGo = new GameObject("RimLight");
-            rimGo.transform.rotation = Quaternion.Euler(25f, 150f, 0f);
-            var rim = rimGo.AddComponent<Light>();
-            rim.type = LightType.Directional;
-            rim.color = new Color(0.65f, 0.35f, 1f);
-            rim.intensity = 0.45f;
-            rim.shadows = LightShadows.None;
+            // cool sky fill from the opposite side keeps the shaded faces readable (and blue, not black)
+            var fillGo = new GameObject("FillLight");
+            fillGo.transform.rotation = Quaternion.Euler(42f, 115f, 0f);
+            var fill = fillGo.AddComponent<Light>();
+            fill.type = LightType.Directional;
+            fill.color = new Color(0.38f, 0.56f, 1f);
+            fill.intensity = 0.45f;
+            fill.shadows = LightShadows.None;
 
             // ---------- Post processing ----------
             var profile = ScriptableObject.CreateInstance<VolumeProfile>();
@@ -83,23 +88,29 @@ namespace Zcom.EditorTools
                 return c;
             }
             var bloom = Add<Bloom>();
-            bloom.intensity.Override(1.15f);
-            bloom.threshold.Override(0.95f);
-            bloom.scatter.Override(0.68f);
+            bloom.intensity.Override(0.85f);
+            bloom.threshold.Override(1.05f);
+            bloom.scatter.Override(0.72f);
+            bloom.highQualityFiltering.Override(true);
             var tone = Add<Tonemapping>();
             tone.mode.Override(TonemappingMode.ACES);
             var color = Add<ColorAdjustments>();
-            color.postExposure.Override(0.5f);
-            color.contrast.Override(14f);
-            color.saturation.Override(12f);
+            color.postExposure.Override(0.65f);
+            color.contrast.Override(10f);
+            color.saturation.Override(4f);
+            // teal shadows / warm highlights: the classic complementary grade, kept subtle
+            var split = Add<SplitToning>();
+            split.shadows.Override(new Color(0.4f, 0.5f, 0.62f));
+            split.highlights.Override(new Color(0.62f, 0.53f, 0.42f));
+            split.balance.Override(-15f);
             var vig = Add<Vignette>();
-            vig.intensity.Override(0.32f);
-            vig.smoothness.Override(0.45f);
+            vig.intensity.Override(0.28f);
+            vig.smoothness.Override(0.5f);
             var ca = Add<ChromaticAberration>();
-            ca.intensity.Override(0.08f);
+            ca.intensity.Override(0.04f);
             var grain = Add<FilmGrain>();
             grain.type.Override(FilmGrainLookup.Thin1);
-            grain.intensity.Override(0.12f);
+            grain.intensity.Override(0.08f);
             EditorUtility.SetDirty(profile);
 
             var volGo = new GameObject("PostFX");

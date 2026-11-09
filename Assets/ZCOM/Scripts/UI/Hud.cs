@@ -335,16 +335,17 @@ namespace Zcom
 
         void BuildBanner()
         {
-            var b = UiKit.Node("Banner", root, new Vector2(0.5f, 0.7f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1200, 160));
+            // sits in the upper quarter, under the area / threat / extraction readouts, so it never covers the character or the fight
+            var b = UiKit.Node("Banner", root, new Vector2(0.5f, 0.765f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1200, 120));
             bannerGroup = b.gameObject.AddComponent<CanvasGroup>();
             bannerGroup.alpha = 0f;
-            UiKit.Img("Backdrop", b, UiKit.Glow, new Color(0f, 0.01f, 0.03f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -4), new Vector2(900, 170));
-            bannerKicker = UiKit.Label("Kicker", b, "", 15, Cyan, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 46), new Vector2(800, 20), false);
-            bannerTitle = UiKit.Label("Title", b, "", 58, UiKit.TextColor, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 6), new Vector2(1200, 70), false);
-            bannerLineL = UiKit.Img("LineL", b, UiKit.FadeLine, Cyan, new Vector2(0.5f, 0.5f), new Vector2(0, 0.5f), new Vector2(-6, -30), new Vector2(300, 1.5f)).rectTransform;
+            UiKit.Img("Backdrop", b, UiKit.Glow, new Color(0f, 0.01f, 0.03f, 0.45f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -4), new Vector2(760, 124));
+            bannerKicker = UiKit.Label("Kicker", b, "", 13, Cyan, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 34), new Vector2(800, 18), false);
+            bannerTitle = UiKit.Label("Title", b, "", 40, UiKit.TextColor, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 3), new Vector2(1200, 50), false);
+            bannerLineL = UiKit.Img("LineL", b, UiKit.FadeLine, Cyan, new Vector2(0.5f, 0.5f), new Vector2(0, 0.5f), new Vector2(-6, -24), new Vector2(300, 1.5f)).rectTransform;
             bannerLineL.localScale = new Vector3(-1, 1, 1);
-            bannerLineR = UiKit.Img("LineR", b, UiKit.FadeLine, Cyan, new Vector2(0.5f, 0.5f), new Vector2(0, 0.5f), new Vector2(6, -30), new Vector2(300, 1.5f)).rectTransform;
-            bannerSub = UiKit.Label("Sub", b, "", 19, Dim, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -52), new Vector2(1000, 24), false);
+            bannerLineR = UiKit.Img("LineR", b, UiKit.FadeLine, Cyan, new Vector2(0.5f, 0.5f), new Vector2(0, 0.5f), new Vector2(6, -24), new Vector2(300, 1.5f)).rectTransform;
+            bannerSub = UiKit.Label("Sub", b, "", 17, Dim, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -42), new Vector2(1000, 22), false);
         }
 
         void BuildPrompt()
@@ -374,7 +375,7 @@ namespace Zcom
                 UiKit.Label("Action", p, rows[i].Item2, 18, UiKit.TextColor, TextAnchor.MiddleLeft, new Vector2(0, 1), new Vector2(0, 1), new Vector2(120, -48 - i * 30 - 1), new Vector2(250, 26), false);
             }
             controlsGroup.alpha = 0f;
-            controlsShownUntil = 10f;
+            controlsShownUntil = 6.5f;
         }
 
         void BuildGameOver()
@@ -816,8 +817,8 @@ namespace Zcom
             float grow = Ease.OutCubic(Mathf.Clamp01(bannerT / 0.6f));
             bannerLineL.sizeDelta = new Vector2(320f * grow, 1.5f);
             bannerLineR.sizeDelta = new Vector2(320f * grow, 1.5f);
-            float slide = (1f - Ease.OutCubic(Mathf.Clamp01(bannerT / 0.4f))) * 18f;
-            bannerTitle.rectTransform.anchoredPosition = new Vector2(0, 6 - slide);
+            float slide = (1f - Ease.OutCubic(Mathf.Clamp01(bannerT / 0.4f))) * 14f;
+            bannerTitle.rectTransform.anchoredPosition = new Vector2(0, 3 - slide);
             if (bannerT > 3.2f) bannerT = -1f;
         }
 
@@ -825,7 +826,9 @@ namespace Zcom
         {
             if (PlayerInputSource.Current.help)
                 controlsShownUntil = controlsGroup.alpha > 0.5f && Time.timeSinceLevelLoad < controlsShownUntil ? 0f : float.MaxValue;
-            float target = Time.timeSinceLevelLoad < controlsShownUntil && startT > 0.8f ? 1f : 0f;
+            bool pinned = controlsShownUntil == float.MaxValue;
+            bool fighting = GameManager.I && GameManager.I.AlertedHostiles > 0;
+            float target = Time.timeSinceLevelLoad < controlsShownUntil && startT > 0.8f && (pinned || !fighting) ? 1f : 0f;
             controlsGroup.alpha = Mathf.MoveTowards(controlsGroup.alpha, target, dt * 3f);
             controls.SetActive(controlsGroup.alpha > 0.01f);
         }

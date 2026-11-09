@@ -15,12 +15,15 @@ namespace Zcom
         [Header("Framing")]
         public float pitch = 52f;
         public float yaw = 45f;
-        public float distance = 25f;
+        public float distance = 21f;
         public float fieldOfView = 30f;
+        [Tooltip("Extra distance while hostiles are engaged, so the fight stays readable.")]
+        public float combatZoomOut = 2.5f;
+        public float zoomSmoothTime = 0.55f;
         [Header("Follow")]
         public float followSmoothTime = 0.12f;
-        public float lookAhead = 0.3f;
-        public float maxLookAhead = 5f;
+        public float lookAhead = 0.38f;
+        public float maxLookAhead = 6.5f;
         [Header("Shake")]
         public float maxShakeOffset = 0.7f;
         public float maxShakeRoll = 2.5f;
@@ -30,6 +33,7 @@ namespace Zcom
         float trauma;
         Vector3 kick;
         Vector3 focus, focusVel;
+        float zoom, zoomVel;
         PlayerController player;
 
         public Camera Cam => cam;
@@ -70,8 +74,12 @@ namespace Zcom
                 0f) * (2f * maxShakeOffset * s);
             float roll = (Mathf.PerlinNoise(t * 0.8f, 7.7f) - 0.5f) * 2f * maxShakeRoll * s;
 
+            // close on the character while exploring, pull back a little once a fight starts
+            bool combat = GameManager.I && GameManager.I.AlertedHostiles > 0;
+            zoom = Mathf.SmoothDamp(zoom, combat ? combatZoomOut : 0f, ref zoomVel, zoomSmoothTime, Mathf.Infinity, dt);
+
             Quaternion rot = Quaternion.Euler(pitch, yaw, 0f);
-            Vector3 pos = focus + kick - rot * Vector3.forward * distance;
+            Vector3 pos = focus + kick - rot * Vector3.forward * (distance + zoom);
             transform.SetPositionAndRotation(pos + rot * shake, rot * Quaternion.Euler(0f, 0f, roll));
         }
 

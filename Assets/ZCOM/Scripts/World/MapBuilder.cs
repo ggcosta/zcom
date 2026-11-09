@@ -229,15 +229,16 @@ namespace Zcom
                     metallic = 0f,
                     diffuseRemapMax = tint,
                 };
-                l.name = "Layer_" + tex + "_" + tile;
+                l.name = "Layer_" + tex + "_" + tile.ToString(System.Globalization.CultureInfo.InvariantCulture);
                 RegisterAsset?.Invoke(l);
                 return l;
             }
             var layers = new[]
             {
-                Layer("regolith", 6f, new Vector4(0.8f, 0.76f, 0.84f, 1f), 0.08f),
-                Layer("rock", 7f, new Vector4(0.82f, 0.74f, 0.92f, 1f), 0.15f),
-                Layer("regolith", 4.5f, new Vector4(0.42f, 0.38f, 0.45f, 1f), 0.05f),   // scorched / crater floor dust
+                // tints pull the lavender source textures back to a warm grey dust so the lighting (not the albedo) sets the colour
+                Layer("regolith", 6f, new Vector4(0.8f, 0.9f, 0.74f, 1f), 0.08f),
+                Layer("rock", 7f, new Vector4(0.9f, 0.88f, 0.9f, 1f), 0.15f),
+                Layer("regolith", 4.5f, new Vector4(0.41f, 0.46f, 0.38f, 1f), 0.05f),   // scorched / crater floor / dark dust drifts
                 Layer("hive", 4f, new Vector4(1f, 1f, 1f, 1f), 0.45f),
             };
             td.alphamapResolution = 256;
@@ -257,6 +258,11 @@ namespace Zcom
                         dark = Mathf.Max(dark, 1f - S01(((new Vector2(x, z) - c).magnitude / r - 0.55f) / 0.5f));
                     dark = Mathf.Max(dark, (1f - S01(((new Vector2(x, z) - new Vector2(-35.5f, -28.5f)).magnitude - 2.5f) / 2f)) * 0.8f);   // drop-pod scorch
                     dark *= 0.55f + 0.45f * n;
+                    // large-scale variation so the plains are not one flat colour: dark dust drifts and bare rock patches
+                    float drift = Mathf.PerlinNoise(x * 0.043f + 7f, z * 0.043f + 13f);
+                    float bare = Mathf.PerlinNoise(x * 0.06f + 91f, z * 0.06f + 37f);
+                    dark = Mathf.Max(dark, S01((drift - 0.54f) / 0.22f) * 0.55f);
+                    rock += S01((bare - 0.62f) / 0.18f) * 0.45f;
                     float hive = 1f - S01(((new Vector2(x, z) - NestC).magnitude + (n - 0.5f) * 6f - 10f) / 3.5f);
                     float reg = 0.35f + n * 0.3f;
                     float sum = reg + rock + dark + hive;
@@ -311,12 +317,14 @@ namespace Zcom
                 var amber = Mats.Lit(Color.black, 0f, 0.8f, Mats.HDR(new Color(1f, 0.6f, 0.15f), 3f)); amber.name = "HabAmber";
                 var red = Mats.Lit(Color.black, 0f, 0.8f, Mats.HDR(new Color(1f, 0.1f, 0.05f), 4f)); red.name = "HabRed";
                 var trim = Tiled(Mats.Lit(new Color(0.85f, 0.38f, 0.08f), 0.25f, 0.45f), "metal_dark", 1f); trim.SetTexture("_BaseMap", null); trim.name = "HabTrim";
+                // plain dark steel: the panel texture tiled over a 2 m grate reads as a checkerboard from the game camera
+                var grate = Tiled(Mats.Lit(new Color(0.1f, 0.105f, 0.12f), 0.75f, 0.5f), "metal_dark", 0.5f); grate.SetTexture("_BaseMap", null); grate.name = "HabGrate";
                 kitMats = new Dictionary<string, Material>
                 {
                     { "HabWall", Tiled(Mats.Lit(Color.white, 0.3f, 0.42f), "metal_light", 1f) },
                     { "HabFrame", Tiled(Mats.Lit(Color.white, 0.5f, 0.45f), "metal_dark", 1f) },
                     { "HabRoof", Tiled(Mats.Lit(new Color(0.55f, 0.55f, 0.6f), 0.45f, 0.35f), "metal", 1f) },
-                    { "HabGrate", Tiled(Mats.Lit(new Color(0.6f, 0.6f, 0.65f), 0.6f, 0.45f), "metal_dark", 2f) },
+                    { "HabGrate", grate },
                     { "HabTrim", trim }, { "HabGlass", glass }, { "HabAmber", amber }, { "HabRed", red },
                 };
             }
@@ -371,6 +379,42 @@ namespace Zcom
             return l;
         }
 
+        /// <summary>Downward spot (lamp heads): a defined pool of light on the ground, with soft shadows.</summary>
+        static Light SpotLight(string name, Transform parent, Vector3 localPos, Color c, float intensity, float range, float angle = 110f, bool shadows = true)
+        {
+            var l = PointLight(name, parent, localPos, c, intensity, range);
+            l.type = LightType.Spot;
+            l.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            l.spotAngle = angle;
+            l.innerSpotAngle = angle * 0.5f;
+            if (shadows)
+            {
+                l.shadows = LightShadows.Soft;
+                l.shadowStrength = 0.8f;
+                l.shadowNearPlane = 0.4f;
+            }
+            return l;
+        }
+
+        /// <summary>Low cover wall: one box collider, dressed with a plinth, hazard band, cap, end posts and a light strip.</summary>
+        static void Barricade(string name, Transform parent, Vector3 localPos, float yaw, float length = 2.6f)
+        {
+            HideRenderer(Box(name, parent, localPos + new Vector3(0, 0.55f, 0), new Vector3(length, 1.1f, 0.3f), mSteel, new Vector3(0, yaw, 0)));
+            var v = new GameObject(name + "Visual").transform;
+            v.SetParent(parent, false);
+            v.localPosition = localPos;
+            v.localRotation = Quaternion.Euler(0f, yaw, 0f);
+            Visual("Plinth", v, new Vector3(0, 0.09f, 0), new Vector3(length + 0.1f, 0.18f, 0.52f), mDarkSteel);
+            Visual("Body", v, new Vector3(0, 0.57f, 0), new Vector3(length, 0.8f, 0.22f), mSteel);
+            Visual("Band", v, new Vector3(0, 0.36f, 0), new Vector3(length - 0.5f, 0.16f, 0.27f), mTrim);
+            Visual("Cap", v, new Vector3(0, 1.02f, 0), new Vector3(length + 0.06f, 0.12f, 0.36f), mDarkSteel);
+            for (int sgn = -1; sgn <= 1; sgn += 2)
+            {
+                Visual("Post", v, new Vector3(sgn * (length / 2f - 0.1f), 0.57f, 0), new Vector3(0.22f, 1.08f, 0.42f), mDarkSteel);
+                Visual("Strip", v, new Vector3(0, 0.82f, sgn * 0.115f), new Vector3(length * 0.45f, 0.035f, 0.02f), mCyan, PrimitiveType.Cube, default, false);
+            }
+        }
+
         static Transform Group(string name, Transform parent, Vector3 pos, float yaw = 0f)
         {
             var g = new GameObject(name).transform;
@@ -396,7 +440,7 @@ namespace Zcom
             var post = Box("Post", g, new Vector3(0, 1.8f, 0), new Vector3(0.3f, 3.6f, 0.3f), mDarkSteel);
             if (Kit("Lamp", g, Vector3.zero, 0f)) HideRenderer(post);
             else Visual("Head", g, new Vector3(0, 3.45f, 0.7f), new Vector3(0.35f, 0.1f, 0.25f), neon, PrimitiveType.Cube, default, false);
-            PointLight("Light", g, new Vector3(0, 3.2f, 0.9f), color, 3f, 10f);
+            SpotLight("Light", g, new Vector3(0, 3.3f, 0.9f), color, 30f, 12f);
         }
 
         static void Barrel(Transform parent, Vector3 localPos, Material m)
@@ -566,7 +610,7 @@ namespace Zcom
                 roofParts.Add(Visual("Roof", root, new Vector3(0, h + 0.15f, 0), new Vector3(w + 0.6f, 0.3f, d + 0.6f), mRoof).GetComponent<Renderer>());
             }
 
-            var light = PointLight("InteriorLight", root, new Vector3(0, h - 0.4f, 0), lightColor, 2.2f, Mathf.Max(w, d) * 0.9f);
+            var light = PointLight("InteriorLight", root, new Vector3(0, h - 0.4f, 0), lightColor, 6f, Mathf.Max(w, d) * 0.9f);
             var b = root.gameObject.AddComponent<Building>();
             b.footprint = new Vector2(w, d);
             b.roof = roofParts.ToArray();
@@ -649,12 +693,12 @@ namespace Zcom
 
             // Drop pod (hatch facing the pad)
             Prop("DropPod", g, c + new Vector3(-3.6f, 0, -3.6f), 45f, 1f, true, 0.05f);
-            PointLight("PodLight", g, new Vector3(-2.2f, 1.5f, -2.2f), new Color(1f, 0.55f, 0.2f), 3f, 7f);
+            PointLight("PodLight", g, new Vector3(-2.2f, 1.5f, -2.2f), new Color(1f, 0.55f, 0.2f), 7f, 8f);
             Chest(g, c + new Vector3(3.5f, 0, -3f), -30f, CrateLoot.Basic);
             Prop("Containers", g, c + new Vector3(5.6f, 0, 0.2f), 100f, 0.85f);
             Prop("Canisters", g, c + new Vector3(5.2f, 0, 2.6f), 15f, 0.9f);
-            Lamp(g, c + new Vector3(4.5f, 0, 4.5f), new Color(1f, 0.75f, 0.4f), mYellow);
-            Lamp(g, c + new Vector3(-5f, 0, 4f), new Color(1f, 0.75f, 0.4f), mYellow);
+            Lamp(g, c + new Vector3(4.5f, 0, 4.5f), new Color(1f, 0.62f, 0.28f), mYellow);
+            Lamp(g, c + new Vector3(-5f, 0, 4f), new Color(1f, 0.62f, 0.28f), mYellow);
         }
 
         static void BuildWalkway(Transform t, Vector3 a, Vector3 b)
@@ -669,9 +713,13 @@ namespace Zcom
                 Vector3 p = a + d * (i / (float)n);
                 if (!Kit("Grate", g, p, yaw, default, false))
                     Visual($"Plate{i}", g, p + new Vector3(0, 0.04f, 0), new Vector3(2.2f, 0.06f, 2.3f), mPad, PrimitiveType.Cube, new Vector3(0, yaw, 0), false);
-                if (i % 3 == 0)
+                if (i % 2 == 0)
+                {
+                    // guide lights: a trail of small cyan pools leading from the pod to the outpost
                     for (int s = -1; s <= 1; s += 2)
-                        Visual("Marker", g, p + Quaternion.Euler(0, yaw, 0) * new Vector3(s * 1.25f, 0.12f, 0), new Vector3(0.12f, 0.12f, 0.12f), mCyan, PrimitiveType.Cube, default, false);
+                        Visual("Marker", g, p + Quaternion.Euler(0, yaw, 0) * new Vector3(s * 1.25f, 0.12f, 0), new Vector3(0.14f, 0.14f, 0.5f), mCyan, PrimitiveType.Cube, new Vector3(0, yaw, 0), false);
+                    PointLight("GuideLight", g, OnGround(p) + new Vector3(0, 0.7f, 0), new Color(0.2f, 0.75f, 1f), 2.4f, 5f);
+                }
             }
             keepClear.Add(((a + b) * 0.5f, 3f));
             keepClear.Add((a, 3f)); keepClear.Add((b, 3f));
@@ -716,16 +764,16 @@ namespace Zcom
             var gen = Group("Generator", g, c + new Vector3(6.5f, 0, -1.5f), 20f);
             Box("Housing", gen, new Vector3(0, 0.8f, 0), new Vector3(2.4f, 1.6f, 1.4f), mSteel);
             Visual("Core", gen, new Vector3(0, 0.9f, 0.72f), new Vector3(0.9f, 0.9f, 0.05f), mCyan, PrimitiveType.Cube, default, false);
-            PointLight("GenGlow", gen, new Vector3(0, 1f, 1.4f), new Color(0.2f, 0.7f, 1f), 2f, 5f);
+            PointLight("GenGlow", gen, new Vector3(0, 1f, 1.4f), new Color(0.2f, 0.7f, 1f), 5f, 6f);
             Prop("Canisters", g, c + new Vector3(-1.2f, 0, -2.9f), 20f, 0.9f);
             Prop("Containers", g, c + new Vector3(-11.2f, 0, -4f), 75f, 0.8f);
             Prop("Containers", g, c + new Vector3(11.8f, 0, -6.5f), -10f, 0.75f);
             // Low fence (cover) along the south of the yard
             // (gap at i == 1 where the walkway from the landing zone comes in)
             for (int i = 0; i < 4; i++)
-                if (i != 1) Box($"Fence{i}", g, new Vector3(-12.5f + i * 3.4f, 0.55f, -10.5f), new Vector3(2.6f, 1.1f, 0.3f), mSteel, new Vector3(0, i % 2 == 0 ? 4 : -4, 0));
-            Lamp(g, c + new Vector3(-1.5f, 0, -3f), new Color(0.6f, 0.85f, 1f), mCyan);
-            Lamp(g, c + new Vector3(10f, 0, 2.5f), new Color(0.6f, 0.85f, 1f), mCyan);
+                if (i != 1) Barricade($"Fence{i}", g, new Vector3(-12.5f + i * 3.4f, 0f, -10.5f), i % 2 == 0 ? 4f : -4f);
+            Lamp(g, c + new Vector3(-1.5f, 0, -3f), new Color(0.45f, 0.78f, 1f), mCyan);
+            Lamp(g, c + new Vector3(10f, 0, 2.5f), new Color(0.45f, 0.78f, 1f), mCyan);
 
             Camp(t, "OUTPOST", c + new Vector3(0, 0, 1f), 8f,
                 (AlienType.Skitter, new Vector3(-1.5f, 0, -1.5f)), (AlienType.Skitter, new Vector3(1.5f, 0, -0.5f)),
@@ -747,10 +795,10 @@ namespace Zcom
             {
                 var f = Group("Fire", g, OnGround(cc + fp - new Vector3(0, 0, 8f)) + Vector3.up * 0.15f);
                 Visual("Embers", f, Vector3.zero, new Vector3(0.9f, 0.08f, 0.9f), mFireGlow, PrimitiveType.Cylinder, default, false);
-                PointLight("FireLight", f, new Vector3(0, 0.8f, 0), new Color(1f, 0.5f, 0.15f), 3.2f, 8f);
+                PointLight("FireLight", f, new Vector3(0, 0.8f, 0), new Color(1f, 0.5f, 0.15f), 9f, 10f);
                 f.gameObject.AddComponent<Smolder>();
             }
-            PointLight("WreckGlow", g, (cc - c) + new Vector3(0, 3f, 0), new Color(1f, 0.6f, 0.3f), 2f, 14f);
+            PointLight("WreckGlow", g, (cc - c) + new Vector3(0, 3f, 0), new Color(1f, 0.55f, 0.25f), 12f, 15f);
             Chest(g, c + new Vector3(4.5f, 0, -4.5f), 200f, CrateLoot.Gold);
 
             Camp(t, "CRASH SITE", c + new Vector3(-1f, 0, -3f), 8f,
@@ -769,8 +817,10 @@ namespace Zcom
                 Prop("HiveSpire", g, c + sp, R(0, 360), R(0.75f, 1.25f), true, 0.1f);
             foreach (var ep in new[] { new Vector3(-4f, 0, -1f), new Vector3(4f, 0, 3f), new Vector3(-1.5f, 0, 5f), new Vector3(5f, 0, -5f), new Vector3(-5f, 0, 6f) })
                 Prop("EggCluster", g, c + ep, R(0, 360), R(0.8f, 1.2f), true, 0.05f);
-            PointLight("NestGlowA", g, new Vector3(-3f, 1.5f, 2f), new Color(0.45f, 1f, 0.3f), 2.5f, 9f);
-            PointLight("NestGlowB", g, new Vector3(4f, 1.5f, -2f), new Color(0.7f, 0.3f, 1f), 2.5f, 9f);
+            // sickly green against violet, with a deep magenta at the back: the one place on the map that is not warm/cool
+            PointLight("NestGlowA", g, new Vector3(-3f, 3.2f, 2f), new Color(0.4f, 1f, 0.3f), 34f, 16f);
+            PointLight("NestGlowB", g, new Vector3(4f, 3.2f, -2f), new Color(0.72f, 0.28f, 1f), 38f, 16f);
+            PointLight("NestGlowC", g, new Vector3(3.5f, 3f, 6.5f), new Color(1f, 0.2f, 0.55f), 24f, 14f);
 
             // A lost supply pod in the middle of the hive, holding the best weapon on the map.
             var podPos = c + new Vector3(1f, 0, 1.5f);
@@ -807,8 +857,8 @@ namespace Zcom
 
             // Drill rig
             Prop("DrillRig", g, c + new Vector3(2f, 0, 3.5f), 195f, 1f, true, 0.05f);
-            PointLight("RigLight", g, new Vector3(2f, 4.5f, 3f), new Color(1f, 0.55f, 0.2f), 2.5f, 9f);
-            Lamp(g, c + new Vector3(4f, 0, -4f), new Color(1f, 0.75f, 0.4f), mYellow);
+            PointLight("RigLight", g, new Vector3(2f, 4.5f, 3f), new Color(1f, 0.55f, 0.2f), 16f, 12f);
+            Lamp(g, c + new Vector3(4f, 0, -4f), new Color(1f, 0.62f, 0.28f), mYellow);
 
             Chest(g, c + new Vector3(-1.5f, 0, -3.5f), 30f, CrateLoot.Xenite);
 
@@ -834,7 +884,7 @@ namespace Zcom
             {
                 var lg = Group("Beacon", g, c + dpos, Mathf.Atan2(-dpos.x, -dpos.z) * Mathf.Rad2Deg);
                 if (!Kit("Lamp", lg, Vector3.zero, 0f)) Box("Post", lg, new Vector3(0, 1.8f, 0), new Vector3(0.3f, 3.6f, 0.3f), mDarkSteel);
-                PointLight("Light", lg, new Vector3(0, 3.2f, 0.9f), new Color(0.35f, 0.9f, 1f), 3f, 9f);
+                SpotLight("Light", lg, new Vector3(0, 3.3f, 0.9f), new Color(0.3f, 0.85f, 1f), 26f, 11f);
             }
             var bl = PointLight("BeaconLight", g, new Vector3(0, 4f, 0), new Color(0.35f, 0.9f, 1f), 4f, 16f);
             var ez = g.gameObject.AddComponent<ExtractionZone>();
