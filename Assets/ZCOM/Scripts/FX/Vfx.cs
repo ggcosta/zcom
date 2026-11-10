@@ -99,9 +99,9 @@ namespace Zcom
             bolts = new RingPool<BoltFx>(96, MakeBolt);
             billboards = new RingPool<Quad>(64, () => MakeQuad("Billboard"));
             flats = new RingPool<Quad>(32, () => MakeQuad("Flat"));
-            decals = new RingPool<Quad>(60, () => MakeQuad("Decal"));
+            decals = new RingPool<Quad>(200, () => MakeQuad("Decal"));   // blood stains linger, so the pool is deep
             lights = new RingPool<FxLight>(14, MakeLight);
-            debris = new RingPool<DebrisFx>(180, MakeDebris);
+            debris = new RingPool<DebrisFx>(280, MakeDebris);
         }
 
         // ------------------------------------------------------------------ builders
@@ -484,11 +484,31 @@ namespace Zcom
                 Emit(v.sparks, p + Vector3.up * 0.1f, (Random.insideUnitSphere + Vector3.up).normalized * Random.Range(4f, 9f), 0.06f, Random.Range(0.2f, 0.4f), new Color(1f, 0.6f, 0.3f));
         }
 
-        public static void Splat(Vector3 p, float size, Color color)
+        /// <summary>Ground stain. Sits on the terrain under <paramref name="p"/> (its y is ignored) and fades over the last 30% of its life.</summary>
+        public static void Splat(Vector3 p, float size, Color color, float life = 14f)
         {
             var v = I;
             v.decalLayer = (v.decalLayer + 0.0007f) % 0.02f;
-            v.Flat(v.decals, v.matDecal, new Vector3(p.x, 0.012f + v.decalLayer, p.z), size, size, 14f, color, false, true);
+            var terrain = Terrain.activeTerrain;
+            float ground = terrain ? terrain.SampleHeight(p) + terrain.transform.position.y : 0f;
+            v.Flat(v.decals, v.matDecal, new Vector3(p.x, ground + 0.012f + v.decalLayer, p.z), size, size, life, color, false, true);
+        }
+
+        /// <summary>Shell fragments knocked off by a hit: small flat shards that bounce and settle.</summary>
+        public static void ChitinChips(Vector3 p, Vector3 dir, Material mat, float size, int count)
+        {
+            var v = I;
+            if (mat == null) mat = v.matShrapnel;
+            Vector3 d0 = dir.sqrMagnitude > 0.0001f ? dir.normalized : Vector3.up;
+            var mesh = Prims.Mesh(PrimitiveType.Cube);
+            float scale = Mathf.Lerp(0.85f, 1.6f, Mathf.InverseLerp(0.9f, 1.8f, size));
+            for (int i = 0; i < count; i++)
+            {
+                float s = Random.Range(0.07f, 0.16f) * scale;
+                Vector3 vel = d0 * Random.Range(2f, 5.5f) + Random.insideUnitSphere * 2f + Vector3.up * Random.Range(1.5f, 4f);
+                Debris(mesh, mat, p + Random.insideUnitSphere * 0.1f, Random.rotation, new Vector3(s, s * 0.35f, s * Random.Range(1f, 1.8f)),
+                    vel, Random.insideUnitSphere * 28f, Random.Range(2.2f, 3.4f));
+            }
         }
 
         public static void Debris(Mesh mesh, Material mat, Vector3 pos, Quaternion rot, Vector3 scale, Vector3 vel, Vector3 angVel, float life)
@@ -517,13 +537,34 @@ namespace Zcom
                 Debris(Prims.Mesh(PrimitiveType.Cube), v.matBrass, pos, Random.rotation, new Vector3(0.035f, 0.035f, 0.09f), vel, Random.insideUnitSphere * 30f, 4f);
         }
 
-        public static void AlienDeath(Vector3 center, float size, Color gooColor, Color glowColor, Material skin, Material glowMat, Vector3 dir, bool explosive)
+        /// <param name="carcass">The body stays behind as a ragdoll, so only a few broken-off pieces fly (no legs, less meat).</param>
+        public static void AlienDeath(Vector3 center, float size, Color gooColor, Color glowColor, Material skin, Material glowMat, Vector3 dir, bool explosive, Material shell = null, bool carcass = false)
         {
             var v = I;
             dir.y = 0f;
             if (dir.sqrMagnitude > 0.0001f) dir.Normalize();
             float force = explosive ? 1.8f : 1f;
-            int gibs = Mathf.RoundToInt(7 * size) + (explosive ? 4 : 0);
+
+            // The heavy pieces: carapace plates and leg shards that stay on the ground long after the flash is gone.
+            var shellMat = shell != null ? shell : skin != null ? skin : v.matShrapnel;
+            int plates = carcass ? Mathf.RoundToInt(size) : Mathf.RoundToInt(2 * size) + (explosive ? 1 : 0);
+            for (int i = 0; i < plates; i++)
+            {
+                float s = Random.Range(0.32f, 0.5f) * size;
+                Vector3 vel = (dir * Random.Range(1.5f, 4f) + Random.insideUnitSphere * 2f + Vector3.up * Random.Range(2.5f, 5f)) * force;
+                Debris(Prims.Mesh(PrimitiveType.Sphere), shellMat, center + Random.insideUnitSphere * 0.25f * size, Random.rotation,
+                    new Vector3(s, s * 0.35f, s * Random.Range(0.8f, 1.3f)), vel, Random.insideUnitSphere * 9f, Random.Range(7f, 10f));
+            }
+            int shards = carcass ? 0 : Mathf.RoundToInt(4 * size) + (explosive ? 2 : 0);
+            for (int i = 0; i < shards; i++)
+            {
+                float w = Random.Range(0.05f, 0.08f) * size;
+                Vector3 vel = (dir * Random.Range(1f, 4.5f) + Random.insideUnitSphere * 3.5f + Vector3.up * Random.Range(3f, 6.5f)) * force;
+                Debris(Prims.Mesh(PrimitiveType.Cube), shellMat, center + Random.insideUnitSphere * 0.35f * size, Random.rotation,
+                    new Vector3(w, w, Random.Range(0.4f, 0.65f) * size), vel, Random.insideUnitSphere * 22f, Random.Range(5f, 7f));
+            }
+
+            int gibs = carcass ? Mathf.RoundToInt(3 * size) : Mathf.RoundToInt(9 * size) + (explosive ? 4 : 0);
             for (int i = 0; i < gibs; i++)
             {
                 var mesh = Prims.Mesh(Random.value < 0.6f ? PrimitiveType.Sphere : PrimitiveType.Cube);
@@ -533,14 +574,27 @@ namespace Zcom
                 Vector3 vel = (dir * Random.Range(1f, 5f) + Random.insideUnitSphere * 3.5f + Vector3.up * Random.Range(3f, 7f)) * force;
                 Debris(mesh, mat, center + Random.insideUnitSphere * 0.3f * size, Random.rotation, new Vector3(s, s * Random.Range(0.6f, 1.2f), s), vel, Random.insideUnitSphere * 20f, Random.Range(3f, 4.5f));
             }
-            Goo(center, dir + Vector3.up, gooColor, Mathf.RoundToInt(26 * size));
+            Goo(center, dir + Vector3.up, gooColor, Mathf.RoundToInt(34 * size));
             for (int i = 0; i < 8 * size; i++)
                 Emit(v.dots, center, Random.onUnitSphere * Random.Range(2f, 6f) * force, Random.Range(0.15f, 0.35f), Random.Range(0.25f, 0.5f), glowColor);
             v.Billboard(v.matGlow, center, 1.5f * size, 3.5f * size, 0.16f, Mats.HDR(glowColor, 2.2f));
             LightFlash(center, glowColor, 5f, 6f * size, 0.22f);
             Shockwave(new Vector3(center.x, 0f, center.z), 1.6f * size, Mats.HDR(glowColor, 2f), 0.28f);
+            // A pool where it died, plus spatter thrown down-range by the killing shot (all round for explosions).
             Color decal = gooColor * 0.7f; decal.a = 0.9f;
-            Splat(center + dir * 0.5f, Random.Range(1.8f, 2.6f) * size, decal);
+            Vector3 pool = center + dir * 0.5f;
+            Splat(pool, Random.Range(2.1f, 2.9f) * size, decal, 40f);
+            bool radial = explosive || dir.sqrMagnitude < 0.5f;
+            Vector3 side = Vector3.Cross(Vector3.up, dir);
+            int spatter = Mathf.RoundToInt(4 * size) + (explosive ? 3 : 0);
+            for (int i = 0; i < spatter; i++)
+            {
+                Vector3 o;
+                if (radial) { Vector2 c = Random.insideUnitCircle.normalized * Random.Range(1.2f, 3.2f) * size; o = new Vector3(c.x, 0f, c.y); }
+                else o = dir * (Random.Range(1f, 3.6f) * size) + side * (Random.Range(-0.9f, 0.9f) * size);
+                Color sc = gooColor * Random.Range(0.5f, 0.7f); sc.a = Random.Range(0.7f, 0.9f);
+                Splat(pool + o, Random.Range(0.45f, 1.1f) * size, sc, 40f);
+            }
         }
 
         public static void Explosion(Vector3 p, float radius)

@@ -73,6 +73,11 @@ namespace Zcom
             if (!go) return false;
             body.localPosition = Vector3.zero;
             foreach (var smr in go.GetComponentsInChildren<SkinnedMeshRenderer>()) smr.updateWhenOffscreen = true;
+            // The rig is driven by code only (IK legs, ragdoll); the importer's empty Animator has nothing to play.
+            foreach (var an in go.GetComponentsInChildren<Animator>())
+            {
+                if (Application.isPlaying) Object.Destroy(an); else Object.DestroyImmediate(an);
+            }
             a.legs = new Transform[0];
             var sac = CharacterModels.Find(go.transform, "Sac");
             if (sac) a.sac = sac;
@@ -82,6 +87,7 @@ namespace Zcom
             var clawR = CharacterModels.Find(go.transform, "Claw_R_A");
             if (clawL && clawR) a.arms = new[] { clawL, clawR };
             a.skinMaterial = flesh;
+            a.shellMaterial = chitin;
             a.glowMaterial = glowM;
             var il = InsectLegs.Attach(go, a.transform);
             switch (type)
@@ -114,7 +120,7 @@ namespace Zcom
             var shell = Lit("SkitterShell", new Color(0.09f, 0.04f, 0.13f), 0.35f, 0.9f);
             var eye = Glow("SkitterEye", new Color(0.4f, 1f, 0.35f), 6f);
             var sacMat = Glow("SkitterSac", new Color(1f, 0.25f, 0.85f), 2.5f);
-            a.skinMaterial = skin; a.glowMaterial = sacMat;
+            a.skinMaterial = skin; a.shellMaterial = shell; a.glowMaterial = sacMat;
             if (TryXeno(a, body, AlienType.Skitter, new Color(0.45f, 1f, 0.2f), 3.5f)) return;
             if (TryModel(a, body, "Skitter", new Dictionary<string, Material> { { "Skin", skin }, { "Shell", shell }, { "Glow", eye }, { "Sac", sacMat } })) return;
 
@@ -160,7 +166,7 @@ namespace Zcom
             var shell = Lit("SpitterShell", new Color(0.05f, 0.11f, 0.11f), 0.3f, 0.85f);
             var eye = Glow("SpitterEye", new Color(1f, 0.9f, 0.2f), 6f);
             var sacMat = Glow("SpitterSac", new Color(0.55f, 1f, 0.15f), 3f);
-            a.skinMaterial = skin; a.glowMaterial = sacMat;
+            a.skinMaterial = skin; a.shellMaterial = shell; a.glowMaterial = sacMat;
             if (TryXeno(a, body, AlienType.Spitter, new Color(0.55f, 1f, 0.15f), 3.2f)) return;
             if (TryModel(a, body, "Spitter", new Dictionary<string, Material> { { "Skin", skin }, { "Shell", shell }, { "Glow", eye }, { "Sac", sacMat } })) return;
 
@@ -208,7 +214,7 @@ namespace Zcom
             var armor = Lit("BruteArmor", new Color(0.18f, 0.18f, 0.2f), 0.7f, 0.65f);
             var eye = Glow("BruteEye", new Color(1f, 0.35f, 0.1f), 7f);
             var core = Glow("BruteCore", new Color(1f, 0.45f, 0.1f), 4f);
-            a.skinMaterial = skin; a.glowMaterial = core;
+            a.skinMaterial = skin; a.shellMaterial = armor; a.glowMaterial = core;
             var bone = Lit("BruteBone", new Color(0.85f, 0.8f, 0.7f), 0f, 0.5f);
             if (TryXeno(a, body, AlienType.Brute, new Color(1f, 0.45f, 0.1f), 3.2f)) return;
             if (TryModel(a, body, "Brute", new Dictionary<string, Material> { { "Skin", skin }, { "Shell", armor }, { "Glow", eye }, { "Sac", core }, { "Bone", bone } })) return;

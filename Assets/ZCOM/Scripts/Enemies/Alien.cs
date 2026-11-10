@@ -55,11 +55,13 @@ namespace Zcom
 
         [Header("Look")]
         public Material skinMaterial;
+        [Tooltip("Carapace material: the chips knocked off by hits and the plates left by a death. Falls back to the skin.")]
+        public Material shellMaterial;
         public Material glowMaterial;
         public Color gooColor = new Color(0.4f, 1f, 0.3f);
         public Color glowColor = new Color(0.4f, 1f, 0.3f);
 
-        enum State { Spawning, Idle, Chase, Telegraph, Attack, Recover, Dead }
+        enum State { Spawning, Idle, Chase, Telegraph, Attack, Recover, Stagger, Dead }
 
         [Header("Camp behaviour")]
         [Tooltip("Notices the player within this range (with line of sight), or always within 4m.")]
@@ -79,6 +81,8 @@ namespace Zcom
         public float Health { get; private set; }
         public bool IsAlive => state != State.Dead && Health > 0f;
         public float Health01 => maxHealth > 0f ? Mathf.Clamp01(Health / maxHealth) : 0f;
+        /// <summary>The hit capsule on the root (carcasses are told to ignore it).</summary>
+        public Collider BodyCollider => col;
         public float LastHitTime { get; private set; } = -100f;
         /// <summary>Revealed by the Marshal's scan pulse until this time (shown through walls on the HUD).</summary>
         public float RevealedUntil { get; set; } = -100f;
@@ -93,6 +97,9 @@ namespace Zcom
         Vector3 attackDir;
         bool attackHit;
         Vector3 squash = Vector3.one, squashVel;
+        // Hit reaction: the body rocks away from each shot (flinch), and enough damage in a short window staggers it.
+        Vector3 flinch, flinchVel;
+        float staggerMeter, staggerImmuneT, staggerDur;
         Vector3 bodyBasePos, sacBaseScale;
         Quaternion[] legBase, armBase;
         NavMeshAgent agent;
@@ -107,6 +114,7 @@ namespace Zcom
             All.Add(this);
             mpb = new MaterialPropertyBlock();
             col = GetComponent<Collider>();
+            AlienCorpse.IgnoreAll(col);
             rends = body ? body.GetComponentsInChildren<Renderer>() : GetComponentsInChildren<Renderer>();
             bodyBasePos = body ? body.localPosition : Vector3.zero;
             sacBaseScale = sac ? sac.localScale : Vector3.one;
@@ -172,6 +180,7 @@ namespace Zcom
             if (Hud.I) Hud.I.WorldText(transform.position + Vector3.up * (1.8f + deathSize * 0.5f), "!", new Color(1f, 0.3f, 0.2f), 46);
             if (!fromCamp)
             {
+                if (type == AlienType.Brute) ProcAudio.Play("roar", 0.55f, 0.06f, 0.85f);
                 ProcAudio.Play("screech", 0.4f, 0.1f, type == AlienType.Brute ? 0.6f : 1.1f);
                 if (camp) camp.Alarm(this);
             }
@@ -225,6 +234,8 @@ namespace Zcom
             stateT += dt;
             animT += dt;
             cooldownT -= dt;
+            staggerImmuneT -= dt;
+            staggerMeter = Mathf.Max(0f, staggerMeter - 0.3f * dt);
 
             var player = PlayerController.I;
             bool playerAlive = player && player.CanAct;
@@ -253,6 +264,9 @@ namespace Zcom
                     break;
                 case State.Recover:
                     if (stateT >= recoverTime) { state = State.Chase; stateT = 0f; SetStopped(false); }
+                    break;
+                case State.Stagger:
+                    if (stateT >= staggerDur) { state = State.Chase; stateT = 0f; repathT = 0f; SetStopped(false); }
                     break;
             }
 
@@ -445,17 +459,31 @@ namespace Zcom
             if (kdir.sqrMagnitude > 0.0001f) kdir.Normalize();
             knockVel += kdir * info.knockback * knockbackResist;
 
+            // Flinch: the body rocks away from the shot; heavy types barely move.
+            Vector3 local = transform.InverseTransformDirection(kdir);
+            float rock = (info.quiet ? 2.5f : info.crit ? 15f : 9f) * Mathf.Lerp(0.45f, 1f, knockbackResist);
+            flinchVel += new Vector3(local.z, 0f, -local.x) * (rock * 22f);
+
             if (info.quiet)
             {
                 if (Random.value < 0.35f) Vfx.Goo(info.point, -kdir + Vector3.up * 0.3f, gooColor, 2);
+                if (Random.value < 0.08f) BloodStain(kdir, 0.4f);
             }
             else
             {
                 Vfx.Goo(info.point, -kdir + Vector3.up * 0.3f, gooColor, info.crit ? 14 : 7);
+                Vfx.ChitinChips(info.point, -kdir + Vector3.up * 0.6f, shellMaterial ? shellMaterial : skinMaterial, deathSize,
+                    info.crit ? 4 : Random.value < 0.5f ? 2 : 1);
+                if (info.crit || Random.value < 0.45f) BloodStain(kdir, info.crit ? 0.9f : 0.55f);
                 float pitch = type == AlienType.Brute ? 0.7f : type == AlienType.Spitter ? 1f : 1.25f;
                 ProcAudio.Play("hit_alien", 0.32f, 0.12f, pitch);
+                if (info.crit) ProcAudio.Play("chitin", 0.3f, 0.15f, pitch);
                 if (Hud.I) Hud.I.DamageNumber(info.point + Vector3.up * 0.4f, info.amount, info.crit);
             }
+
+            // Enough damage in a short window breaks its stride.
+            staggerMeter += info.amount / Mathf.Max(1f, maxHealth) * (info.crit ? 1.5f : 1f);
+            if (Health > 0f && staggerImmuneT <= 0f && staggerMeter >= StaggerThreshold) Stagger(kdir);
 
             // Explosions interrupt wind-ups (except the brute's, which is a commitment).
             if (info.explosive && type != AlienType.Brute && (state == State.Telegraph || state == State.Chase))
@@ -468,25 +496,79 @@ namespace Zcom
             if (Health <= 0f) Die(info);
         }
 
+        /// <summary>Share of max health, taken within a second or so, that staggers this type.</summary>
+        float StaggerThreshold => type == AlienType.Brute ? 0.16f : type == AlienType.Spitter ? 0.35f : 0.4f;
+
+        /// <summary>
+        /// Breaks the alien's stride: it stops, buckles and sheds shell for a moment. Committed attacks (a skitter
+        /// already lunging, the brute's slam) play out, and a short immunity window prevents stun-locking.
+        /// </summary>
+        void Stagger(Vector3 kdir)
+        {
+            bool brute = type == AlienType.Brute;
+            staggerMeter = 0f;
+            staggerImmuneT = brute ? 3f : 1.4f;
+
+            Vector3 local = transform.InverseTransformDirection(kdir);
+            flinchVel += new Vector3(local.z, 0f, -local.x) * (brute ? 220f : 420f);
+            squash = new Vector3(1.3f, 0.72f, 1.3f);
+            Vector3 chest = transform.position + Vector3.up * (0.7f * deathSize);
+            Vfx.ChitinChips(chest, -kdir + Vector3.up, shellMaterial ? shellMaterial : skinMaterial, deathSize * 1.3f, brute ? 6 : 4);
+            Vfx.Goo(chest, -kdir + Vector3.up * 0.5f, gooColor, 10);
+            BloodStain(kdir, 0.9f);
+            float pitch = brute ? 0.6f : type == AlienType.Spitter ? 0.9f : 1.15f;
+            ProcAudio.Play("alien_pain", brute ? 0.5f : 0.4f, 0.12f, pitch);
+            ProcAudio.Play("chitin", 0.4f, 0.15f, brute ? 0.75f : 1.1f);
+
+            if (state == State.Attack || state == State.Spawning || (brute && state == State.Telegraph)) return;
+            state = State.Stagger;
+            stateT = 0f;
+            staggerDur = brute ? 0.28f : 0.45f;
+            cooldownT = Mathf.Max(cooldownT, 0.25f);
+            SetStopped(true);
+        }
+
+        /// <summary>Acid blood lands on the ground behind the alien, along the line of the shot.</summary>
+        void BloodStain(Vector3 kdir, float size)
+        {
+            float reach = Mathf.Max(0.8f, deathSize);
+            Vector3 p = transform.position + kdir * (Random.Range(0.5f, 1.7f) * reach) + Random.insideUnitSphere * 0.35f;
+            Color c = gooColor * 0.6f; c.a = 0.85f;
+            Vfx.Splat(p, size * Random.Range(0.7f, 1.3f) * Mathf.Lerp(0.85f, 1.4f, Mathf.InverseLerp(0.9f, 1.8f, deathSize)), c, 24f);
+        }
+
         void Die(DamageInfo info)
         {
+            bool brute = type == AlienType.Brute;
+            Vector3 moveVel = AgentReady ? agent.velocity : Vector3.zero;
             state = State.Dead;
             All.Remove(this);
             if (agent) agent.enabled = false;
             if (col) col.enabled = false;
 
+            // Gunfire leaves a carcass (a ragdoll of the same model); explosions blow the alien to pieces.
+            if (sac) sac.localScale = sacBaseScale;
+            bool carcass = !info.explosive && AlienCorpse.TryCreate(this, info, knockVel + moveVel);
+
             Vector3 center = transform.position + Vector3.up * (0.6f * deathSize);
-            Vfx.AlienDeath(center, deathSize, gooColor, glowColor, skinMaterial, glowMaterial, info.direction, info.explosive);
-            ProcAudio.Play("alien_death", type == AlienType.Brute ? 0.8f : 0.5f, 0.1f,
-                type == AlienType.Brute ? 0.6f : type == AlienType.Spitter ? 0.9f : 1.2f);
-            GameFeel.HitStop(type == AlienType.Brute ? 0.1f : 0.035f, 0.05f);
-            GameFeel.Shake(type == AlienType.Brute ? 0.4f : 0.12f);
+            Vfx.AlienDeath(center, deathSize, gooColor, glowColor, skinMaterial, glowMaterial, info.direction, info.explosive, shellMaterial, carcass);
+            ProcAudio.Play("alien_death", brute ? 0.8f : 0.5f, 0.1f, brute ? 0.6f : type == AlienType.Spitter ? 0.9f : 1.2f);
+            ProcAudio.Play("gib", brute ? 0.7f : 0.45f, 0.12f, brute ? 0.7f : 1f);
+            GameFeel.HitStop(brute ? 0.13f : 0.045f, 0.05f);
+            GameFeel.Shake(brute ? 0.5f : 0.16f);
 
             if (GameManager.I) GameManager.I.OnAlienKilled(this);
-            float drop = type == AlienType.Brute ? 0.8f : healthDropChance;
+            float drop = brute ? 0.8f : healthDropChance;
             if (Random.value < drop) HealthOrb.Spawn(transform.position + Vector3.up * 0.8f);
             LootTable.AlienDrop(type, transform.position);
-            Destroy(gameObject);
+            if (carcass)
+            {
+                // The GameObject lives on as the corpse; only the living parts go.
+                if (agent) Destroy(agent);
+                if (col) Destroy(col);
+                Destroy(this);
+            }
+            else Destroy(gameObject);
         }
 
         void Animate(float dt)
@@ -534,6 +616,13 @@ namespace Zcom
                 else poseScale = Vector3.Lerp(Vector3.one, new Vector3(0.92f, 1.08f, 0.92f), tele);
                 pose += new Vector3(Mathf.Sin(animT * 70f), 0, Mathf.Cos(animT * 63f)) * 0.025f * tele; // shiver
             }
+            else if (state == State.Stagger)
+            {
+                // buckles towards the ground and shudders, then picks itself back up
+                float k = 1f - Mathf.Clamp01(stateT / Mathf.Max(0.01f, staggerDur));
+                pose = new Vector3(Mathf.Sin(animT * 58f) * 0.035f, -0.14f * deathSize, 0f) * k;
+                poseScale = Vector3.Lerp(Vector3.one, new Vector3(1.08f, 0.88f, 1.08f), k);
+            }
 
             float spawn = state == State.Spawning ? Ease.OutBack(stateT / 0.6f) : 1f;
             Vector3 rise = state == State.Spawning ? Vector3.down * (1f - Ease.OutCubic(stateT / 0.6f)) * 0.8f : Vector3.zero;
@@ -542,9 +631,11 @@ namespace Zcom
             body.localPosition = bodyBasePos + Vector3.up * bob + pose + rise;
             body.localScale = Vector3.Scale(Vector3.Scale(squash, poseScale), Vector3.one * Mathf.Max(0.01f, spawn));
 
-            // Lean into movement.
+            // Lean into movement, and rock away from hits.
+            Spring.Step(ref flinch, ref flinchVel, Vector3.zero, 220f, 16f, dt);
+            flinch = Vector3.ClampMagnitude(flinch, 30f);
             Vector3 localVel = AgentReady ? transform.InverseTransformDirection(agent.velocity) : Vector3.zero;
-            body.localRotation = Quaternion.Euler(Mathf.Clamp(localVel.z * 2f, -12f, 12f), 0f, Mathf.Clamp(-localVel.x * 2f, -12f, 12f));
+            body.localRotation = Quaternion.Euler(Mathf.Clamp(localVel.z * 2f, -12f, 12f) + flinch.x, 0f, Mathf.Clamp(-localVel.x * 2f, -12f, 12f) + flinch.z);
         }
 
         void UpdateFlash(float dt)

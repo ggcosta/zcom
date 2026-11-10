@@ -22,6 +22,8 @@ namespace Zcom.EditorTools
         const string KeyTour = "zcom_smoke_tour";
         static int tourIndex;
         static float lineupShotAt = -1f, runShotAt = -1f;
+        static int actStage = -1; static float actAt;
+        static int corpseSeen, corpseShots; static float corpseShotA = -1f, corpseShotB = -1f;
         static float showStart = -1f; static int showAmmoSeen = -1; static float showShotAt = -1f; static int showDone = -1;
         static bool sawGameOver, sawRestart;
         static float gameOverSeenAt = -1f;
@@ -223,6 +225,16 @@ namespace Zcom.EditorTools
             }
             if (aimShotPending && t >= aimShotAt) { aimShotPending = false; Capture($"t{t:00}_grenade_aim"); }
 
+            // The first few carcasses: one shot mid-tumble, one at rest.
+            AlienCorpse.LogSettle = true;
+            if (AlienCorpse.Spawned > corpseSeen)
+            {
+                corpseSeen = AlienCorpse.Spawned;
+                if (corpseShots < 3 && corpseShotA < 0f && corpseShotB < 0f) { corpseShots++; corpseShotA = t + 0.3f; corpseShotB = t + 2.4f; }
+            }
+            if (corpseShotA > 0f && t >= corpseShotA) { corpseShotA = -1f; Capture($"corpse{corpseShots}_tumble"); }
+            if (corpseShotB > 0f && t >= corpseShotB) { corpseShotB = -1f; Capture($"corpse{corpseShots}_rest"); }
+
             if (SessionState.GetBool(KeyPassive, false) && GameManager.I)
             {
                 if (GameManager.I.IsGameOver && !sawGameOver) { sawGameOver = true; gameOverSeenAt = t; }
@@ -260,7 +272,7 @@ namespace Zcom.EditorTools
                 var gm = GameManager.I;
                 string summary = $"duration={t:0.0}s areasVisited={visitedZones.Count} kills={(gm ? gm.Kills : -1)} " +
                                  $"aliveAliens={Alien.All.Count} playerHP={(PlayerController.I ? PlayerController.I.health.Health : -1)} " +
-                                 $"errors={SessionState.GetInt(KeyErrors, 0)} " + LootSummary();
+                                 $"errors={SessionState.GetInt(KeyErrors, 0)} recordedSfx={ProcAudio.RecordedClips} corpses={AlienCorpse.Spawned} " + LootSummary();
                 File.WriteAllText(Path.Combine(SessionState.GetString(KeyOut, "."), "summary.txt"), summary);
                 Debug.Log("[ZCOM SMOKE] " + summary);
                 int errors = SessionState.GetInt(KeyErrors, 0);
@@ -358,7 +370,7 @@ namespace Zcom.EditorTools
             if (runShotAt > 0f && t >= runShotAt) { runShotAt = -1f; Capture("closeup_marshal_run"); if (CameraRig.I) CameraRig.I.distance = 14f; }
             int w = ShowcaseWeapon(t);
             if (w < 0) return;
-            if (w > 2) { SessionState.SetFloat(KeyDuration, Mathf.Min(SessionState.GetFloat(KeyDuration, 30f), t + 0.2f)); return; }
+            if (w > 2) { ActingTick(t, p); return; }
             float local = (t - showStart) - w * 2.5f;
             var gun = p.gun;
             if (!gun || gun.Current == null) return;
@@ -376,6 +388,118 @@ namespace Zcom.EditorTools
             }
         }
 
+        // After the weapons: the hero's own acting, one close-up per action (reload, grenade throw, dash, hit).
+        static void ActNext(int stage, float t) { actStage = stage; actAt = t; }
+
+        static void ActingTick(float t, PlayerController p)
+        {
+            var gun = p.gun;
+            if (!gun) return;
+            if (actStage < 0) { ActNext(0, t); if (CameraRig.I) CameraRig.I.distance = 6.5f; }
+            float a = t - actAt;
+            switch (actStage)
+            {
+                case 0: if (gun.IsReloading) ActNext(1, t); else if (a > 4f) ActNext(3, t); break;
+                case 1:
+                    if (gun.ReloadProgress > 0.49f) { Capture("hero_reload_belt"); ActNext(2, t); }
+                    else if (!gun.IsReloading) ActNext(3, t);
+                    break;
+                case 2: if (gun.ReloadProgress > 0.71f || !gun.IsReloading) { Capture("hero_reload_slam"); ActNext(3, t); } break;
+                case 3: if (!gun.IsReloading && a > 1f) ActNext(4, t); break;
+                case 4: if (a > 0.55f) { Capture("hero_throw_windup"); ActNext(5, t); } break;      // grenade held
+                case 5: if (a > 0.13f) { Capture("hero_throw_release"); ActNext(6, t); } break;     // released
+                case 6: if (a > 1f) ActNext(7, t); break;
+                case 7: if (a > 0.1f) { Capture("hero_dash"); ActNext(8, t); } break;               // dash pressed
+                case 8: if (a > 0.9f) { p.HitReact(-p.AimDir); ActNext(9, t); } break;
+                case 9: if (a > 0.1f) { Capture("hero_hit"); ActNext(30, t); } break;
+                // Run cycle: jog towards the camera (stages 31-34 hold the stick), four phases of the stride.
+                case 30:
+                    if (a > 0.6f)
+                    {
+                        // Weapon grip close-ups from eye level (front-left, right side, front-right).
+                        Vector3 f = p.visual ? p.visual.forward : p.transform.forward;
+                        f.y = 0f; f.Normalize();
+                        Vector3 r = Vector3.Cross(Vector3.up, f);
+                        Vector3 chest = p.transform.position + Vector3.up * 1.15f;
+                        CaptureFrom("grip_front", chest + (f * 2.4f - r * 0.9f) + Vector3.up * 0.25f, chest);
+                        CaptureFrom("grip_side", chest + r * 2.6f + Vector3.up * 0.2f, chest);
+                        CaptureFrom("grip_34", chest + (f * 1.8f + r * 1.8f) + Vector3.up * 0.6f, chest);
+                        CaptureFrom("grip_top", chest + (f * 0.6f - r * 0.4f) + Vector3.up * 2.4f, chest);
+                        ActNext(31, t);
+                    }
+                    break;
+                case 31: if (a > 0.7f) { Capture("hero_run_a"); ActNext(32, t); } break;
+                case 32: if (a > 0.12f) { Capture("hero_run_b"); ActNext(33, t); } break;
+                case 33: if (a > 0.12f) { Capture("hero_run_c"); ActNext(34, t); } break;
+                case 34: if (a > 0.12f) { Capture("hero_run_d"); ActNext(10, t); } break;
+                case 10:
+                    if (a > 0.6f)
+                    {
+                        // Ragdoll close-up: a fresh row of aliens in front of the camera, shot dead across the screen.
+                        if (CameraRig.I) CameraRig.I.distance = 12f;
+                        ScreenAxes(out Vector3 right, out Vector3 up);
+                        var types = new[] { AlienType.Skitter, AlienType.Brute, AlienType.Spitter, AlienType.Skitter };
+                        ragAliens.Clear();
+                        for (int i = 0; i < types.Length; i++)
+                        {
+                            Vector3 at = p.transform.position + up * (0.4f + (i % 2) * 2.1f) + right * (-7.2f + i * 2.7f);
+                            var al = AlienFactory.Create(types[i], at, Quaternion.LookRotation(-up), dormant: true);
+                            al.aggroRange = 0f;
+                            al.guardRadius = 0.1f;
+                            ragAliens.Add(al);
+                        }
+                        ActNext(11, t);
+                    }
+                    break;
+                case 11:
+                    if (a > 0.5f)
+                    {
+                        Capture("ragdoll_0");
+                        ScreenAxes(out Vector3 right, out Vector3 up);
+                        foreach (var al in ragAliens)
+                            if (al) al.TakeDamage(new DamageInfo { amount = 99999f, point = al.transform.position + Vector3.up * 0.5f, direction = right, knockback = 2f });
+                        ActNext(12, t);
+                    }
+                    break;
+                case 12: if (a > 0.22f) { Capture("ragdoll_a"); ActNext(13, t); } break;
+                case 13: if (a > 0.4f) { Capture("ragdoll_b"); ActNext(14, t); } break;
+                case 14: if (a > 0.9f) { Capture("ragdoll_c"); ActNext(15, t); } break;
+                case 15: if (a > 2.4f) { Capture("ragdoll_d"); ActNext(16, t); } break;
+                case 16:
+                    if (a > 0.3f)
+                    {
+                        // The Marshal's own death, close up: no corpses in the way, no summary screen over it.
+                        if (CameraRig.I) CameraRig.I.distance = 7.5f;
+                        foreach (var c in Object.FindObjectsByType<AlienCorpse>(FindObjectsSortMode.None))
+                            foreach (var r in c.GetComponentsInChildren<Renderer>()) r.enabled = false;
+                        var hp = p.GetComponent<PlayerHealth>();
+                        if (hp) hp.TakeDamage(new DamageInfo { amount = 99999f, point = p.transform.position + Vector3.up, direction = -p.AimDir, explosive = true });
+                        ActNext(17, t);
+                    }
+                    break;
+                case 17: if (a > 0.55f) { HideUi(); Capture("hero_death_a"); ActNext(18, t); } break;
+                case 18: if (a > 0.4f) { HideUi(); Capture("hero_death_b"); ActNext(19, t); } break;
+                case 19: if (a > 0.45f) { HideUi(); Capture("hero_death_c"); ActNext(20, t); } break;
+                case 20: if (a > 1.8f) { HideUi(); Capture("hero_death_d"); ActNext(21, t); } break;
+                default: SessionState.SetFloat(KeyDuration, Mathf.Min(SessionState.GetFloat(KeyDuration, 30f), t + 0.3f)); break;
+            }
+        }
+
+        static readonly System.Collections.Generic.List<Alien> ragAliens = new System.Collections.Generic.List<Alien>();
+
+        static void HideUi()
+        {
+            foreach (var c in Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None)) c.enabled = false;
+        }
+
+        // Ground directions that read as right / up on screen.
+        static void ScreenAxes(out Vector3 right, out Vector3 up)
+        {
+            var cam = CameraRig.I ? CameraRig.I.Cam : Camera.main;
+            right = cam ? cam.transform.right : Vector3.right; right.y = 0f; right.Normalize();
+            up = Vector3.Cross(right, Vector3.up);
+        }
+
         static PlayerInputFrame ShowcaseInput(PlayerInputFrame f, PlayerController p, Camera cam)
         {
             float t = Time.realtimeSinceStartup - playStart;
@@ -384,6 +508,26 @@ namespace Zcom.EditorTools
             target.y = p.aimHeight;
             Vector3 sp = cam.WorldToScreenPoint(target);
             f.pointer = new Vector2(sp.x, sp.y);
+            if (w > 2 && actStage >= 0)
+            {
+                float a = t - actAt;
+                // Acting is shot from the front-left, so the off hand (which does the work) is in view.
+                ScreenAxes(out Vector3 sr, out Vector3 su);
+                Vector3 face = p.transform.position + (-su - sr * 0.55f).normalized * 6f;
+                face.y = p.aimHeight;
+                Vector3 fp = cam.WorldToScreenPoint(face);
+                f.pointer = new Vector2(fp.x, fp.y);
+                if (actStage == 0)
+                {
+                    if (a < 0.1f) f.slot = 0;
+                    f.fire = a > 0.5f && a < 0.75f;     // spend a few rounds so there is something to reload
+                    f.reload = a > 0.9f;
+                }
+                f.grenade = actStage == 4;
+                if (actStage == 7) { f.move = new Vector2(1f, -0.35f); f.dash = a < 0.05f; }
+                if (actStage >= 31 && actStage <= 34) f.move = new Vector2(-0.55f, -1f).normalized;
+                return f;
+            }
             if (w < 0 || w > 2) return f;
             float local = (t - showStart) - w * 2.5f;
             if (local < 0.1f) f.slot = w;
@@ -488,6 +632,20 @@ namespace Zcom.EditorTools
                 Hud.I.Canvas.worldCamera = cam;
                 Hud.I.Canvas.planeDistance = 2f;
             }
+        }
+
+        /// <summary>Renders the game camera from an arbitrary pose (close-ups), then lets the rig take it back.</summary>
+        static void CaptureFrom(string name, Vector3 pos, Vector3 lookAt)
+        {
+            var cam = CameraRig.I ? CameraRig.I.Cam : null;
+            if (!cam) return;
+            var tr = cam.transform;
+            Vector3 p0 = tr.position; Quaternion r0 = tr.rotation; float fov = cam.fieldOfView;
+            tr.SetPositionAndRotation(pos, Quaternion.LookRotation(lookAt - pos));
+            cam.fieldOfView = 35f;
+            Capture(name);
+            tr.SetPositionAndRotation(p0, r0);
+            cam.fieldOfView = fov;
         }
 
         static void Capture(string name)

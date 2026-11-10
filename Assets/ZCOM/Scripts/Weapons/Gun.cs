@@ -65,6 +65,8 @@ namespace Zcom
         public int Ammo => def != null && energy.TryGetValue(def.kind, out var a) ? a : 0;
         public int MagazineSize => def != null ? def.cellSize : 0;
         public bool IsReloading => reloading;
+        /// <summary>The energy cell on the current weapon model (the hero's hand goes to it while reloading); may be null.</summary>
+        public Transform CellPart => parts.cell;
         public bool IsSwapping => swapT > 0f;
         public bool IsBeaming => beaming;
         public float ReloadProgress => reloading ? Mathf.Clamp01((Time.time - reloadStart) / def.rechargeTime) : 0f;

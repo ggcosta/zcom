@@ -14,9 +14,14 @@ namespace Zcom.EditorTools
             m.useFileScale = true;
             m.importCameras = false;
             m.importLights = false;
-            bool animated = System.IO.Path.GetFileNameWithoutExtension(assetPath).StartsWith("Marshal");
+            string file = System.IO.Path.GetFileNameWithoutExtension(assetPath);
+            bool animated = file.StartsWith("Marshal");
+            // The insect rigs carry no clips (legs are IK, deaths are ragdolls), but with the rig type set to None Unity
+            // drops the skin and imports a rigid mesh that ignores its bones.
+            bool rigged = animated || file.StartsWith("Alien_");
             m.importAnimation = animated;
-            m.animationType = animated ? ModelImporterAnimationType.Generic : ModelImporterAnimationType.None;
+            m.animationType = rigged ? ModelImporterAnimationType.Generic : ModelImporterAnimationType.None;
+            if (rigged && !animated) m.avatarSetup = ModelImporterAvatarSetup.NoAvatar;
             if (animated)
             {
                 m.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;

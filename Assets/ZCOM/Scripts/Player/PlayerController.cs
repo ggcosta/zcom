@@ -51,6 +51,8 @@ namespace Zcom
         Vector3 aimDir = Vector3.forward, aimPoint;
         float dashT, dashCdT;
         Vector3 dashDir;
+        float dashLean;
+        HeroActions actions;
         float walkPhase;
         Vector3 recoil, recoilVel;
         Vector3 squash = Vector3.one, squashVel;
@@ -87,7 +89,17 @@ namespace Zcom
             if (!inventory) inventory = GetComponent<Inventory>();
             aimDir = transform.forward;
             aimPoint = transform.position + aimDir * 5f + Vector3.up * aimHeight;
+            if (animator)
+            {
+                // Reload, throw, flinch and dash acting on the animated model.
+                actions = GetComponent<HeroActions>();
+                if (!actions) actions = gameObject.AddComponent<HeroActions>();
+                actions.Init(this);
+            }
         }
+
+        /// <summary>World direction of the current (or last) dash.</summary>
+        public Vector3 DashDir => dashDir;
 
         void Update()
         {
@@ -242,8 +254,11 @@ namespace Zcom
             float yawRate = Mathf.DeltaAngle(lastYaw, yawNow) / Mathf.Max(dt, 1e-4f);
             lastYaw = yawNow;
             Spring.Step(ref bank, ref bankVel, Mathf.Clamp(-yawRate * 0.012f * Mathf.Clamp01(speed / 3f), -7f, 7f), 120f, 18f, dt);
-            float pitch = Mathf.Clamp(la.z * 0.32f, -9f, 9f) + (IsDashing ? 10f : 0f);
-            float roll = Mathf.Clamp(-la.x * 0.32f, -8f, 8f) + bank;
+            // Dashing throws the whole body into the direction of travel (not just forwards).
+            dashLean = Mathf.MoveTowards(dashLean, IsDashing ? 1f : 0f, dt * (IsDashing ? 14f : 6f));
+            Vector3 ld = transform.InverseTransformDirection(dashDir) * (16f * dashLean);
+            float pitch = Mathf.Clamp(la.z * 0.32f, -9f, 9f) + ld.z;
+            float roll = Mathf.Clamp(-la.x * 0.32f, -8f, 8f) + bank - ld.x;
 
             Spring.Step(ref recoil, ref recoilVel, Vector3.zero, 320f, 24f, dt);
             Spring.Step(ref twist, ref twistVel, 0f, 200f, 18f, dt);
@@ -326,7 +341,8 @@ namespace Zcom
 
         public void PlayThrow()
         {
-            twistVel -= 900f;
+            if (actions) actions.Throw();
+            else twistVel -= 900f;
             squash = new Vector3(1.08f, 0.94f, 1.08f);
         }
 
@@ -336,9 +352,11 @@ namespace Zcom
             push += impulse;
         }
 
-        public void HitReact()
+        /// <param name="dir">World direction the blow was travelling in.</param>
+        public void HitReact(Vector3 dir)
         {
             squash = new Vector3(1.15f, 0.85f, 1.15f);
+            if (actions) actions.Hit(dir);
         }
 
         public void OnDeath()

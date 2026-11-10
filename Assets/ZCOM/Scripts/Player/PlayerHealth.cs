@@ -71,7 +71,7 @@ namespace Zcom
             if (pc)
             {
                 pc.AddPush(info.direction.normalized * info.knockback);
-                pc.HitReact();
+                pc.HitReact(info.direction);
             }
             if (Hud.I) Hud.I.OnPlayerDamaged(info.amount, info.direction);
 

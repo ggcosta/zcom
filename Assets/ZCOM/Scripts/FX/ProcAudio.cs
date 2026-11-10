@@ -4,8 +4,8 @@ using UnityEngine;
 namespace Zcom
 {
     /// <summary>
-    /// Synthesised sound effects (no audio assets needed). Clips are generated once from noise/oscillators
-    /// and played through a small voice pool with pitch variation. Replace with real SFX later by id.
+    /// Sound effects by id, played through a small voice pool with pitch variation. Every id has a clip synthesised
+    /// from noise/oscillators (no audio assets needed); recorded clips in Resources/Audio replace them by id, see LoadRecorded.
     /// </summary>
     public class ProcAudio : MonoBehaviour
     {
@@ -93,6 +93,9 @@ namespace Zcom
         }
 
         static void Add(string id, params AudioClip[] clips) => bank[id] = clips;
+
+        /// <summary>How many recorded clips replaced or extended the synthesised bank (0 = Resources/Audio is missing).</summary>
+        public static int RecordedClips { get; private set; }
 
         /// <summary>Like Clip() but without the fade-out so it loops seamlessly.</summary>
         static AudioClip ClipLoop(string name, float[] d, float peak = 0.8f)
@@ -242,6 +245,33 @@ namespace Zcom
             Add("portal", Clip("portal", Portal()));
             Add("wave", Clip("wave", Alarm(), 0.7f));
             Add("clear", Clip("clear", Arp(new[] { 523f, 659f, 784f, 1046f }, 0.14f), 0.7f));
+            LoadRecorded();
+        }
+
+        /// <summary>
+        /// Recorded clips win over the synthesised ones. Every clip under Resources/Audio named "&lt;id&gt;_NN"
+        /// (e.g. Audio/screech/screech_02.ogg) becomes a variant of that id; ids with no files keep the synth above,
+        /// so a sound is replaced just by dropping files in. A few ids (roar, alien_pain, gib, chitin) only exist as recordings.
+        /// </summary>
+        static void LoadRecorded()
+        {
+            RecordedClips = 0;
+            var found = new SortedDictionary<string, List<AudioClip>>(System.StringComparer.Ordinal);
+            foreach (var c in Resources.LoadAll<AudioClip>("Audio"))
+            {
+                int cut = c.name.LastIndexOf('_');
+                if (cut <= 0) continue;
+                c.LoadAudioData();   // decode now, not on the first play in the middle of a fight
+                string id = c.name.Substring(0, cut);
+                if (!found.TryGetValue(id, out var list)) found[id] = list = new List<AudioClip>();
+                list.Add(c);
+                RecordedClips++;
+            }
+            foreach (var kv in found)
+            {
+                kv.Value.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
+                bank[kv.Key] = kv.Value.ToArray();
+            }
         }
 
         static float[] Shot(int variant)
