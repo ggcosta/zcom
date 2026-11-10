@@ -7,12 +7,15 @@ namespace Zcom.EditorTools
 {
     /// <summary>
     /// Builds Resources/Anim/Marshal.controller from the clips baked into Resources/Models/Marshal.fbx
-    /// (2D freeform-directional locomotion on MoveX / MoveZ + a Death state on the "Dead" trigger),
-    /// and Resources/Materials/MarshalArmor.mat from the baked texture set in Resources/Textures/Marshal.
+    /// (2D freeform-directional locomotion on MoveX / MoveZ + a Death state on the "Dead" trigger). Clips in
+    /// Resources/Models/MarshalMoves.fbx - library animation retargeted onto the same rig by
+    /// Tools/Blender/zcom_marine_mocap.py - replace the procedural ones of the same name.
+    /// Also builds Resources/Materials/MarshalArmor.mat from the baked texture set in Resources/Textures/Marshal.
     /// </summary>
     public static class MarshalAnimSetup
     {
         const string ModelPath = "Assets/ZCOM/Resources/Models/Marshal.fbx";
+        const string MovesPath = "Assets/ZCOM/Resources/Models/MarshalMoves.fbx";
         const string ControllerDir = "Assets/ZCOM/Resources/Anim";
         public const string ControllerPath = ControllerDir + "/Marshal.controller";
         const string TexDir = "Assets/ZCOM/Resources/Textures/Marshal";
@@ -25,7 +28,10 @@ namespace Zcom.EditorTools
             var clips = AssetDatabase.LoadAllAssetsAtPath(ModelPath).OfType<AnimationClip>()
                 .Where(c => !c.name.StartsWith("__preview__")).ToArray();
             if (clips.Length == 0) { Debug.LogWarning("[ZCOM] Marshal.fbx has no clips yet."); return; }
-            AnimationClip Get(string n) => clips.FirstOrDefault(c => c.name == n) ?? clips.FirstOrDefault(c => c.name.EndsWith(n));
+            var moves = AssetDatabase.LoadAllAssetsAtPath(MovesPath).OfType<AnimationClip>()
+                .Where(c => !c.name.StartsWith("__preview__")).ToArray();
+            AnimationClip Get(string n) => moves.FirstOrDefault(c => c.name == n)
+                ?? clips.FirstOrDefault(c => c.name == n) ?? clips.FirstOrDefault(c => c.name.EndsWith(n));
 
             if (!AssetDatabase.IsValidFolder(ControllerDir)) AssetDatabase.CreateFolder("Assets/ZCOM/Resources", "Anim");
             if (AssetDatabase.LoadAssetAtPath<AnimatorController>(ControllerPath)) AssetDatabase.DeleteAsset(ControllerPath);
@@ -57,7 +63,8 @@ namespace Zcom.EditorTools
             }
             EditorUtility.SetDirty(ctrl);
             AssetDatabase.SaveAssets();
-            Debug.Log($"[ZCOM] Marshal animator built with clips: {string.Join(", ", clips.Select(c => c.name))}");
+            Debug.Log($"[ZCOM] Marshal animator built with clips: {string.Join(", ", clips.Select(c => c.name))}" +
+                      $" | from MarshalMoves: {string.Join(", ", moves.Select(c => $"{c.name} {c.length:0.00}s loop={c.isLooping}"))}");
         }
 
         static void EnsureMaterial()

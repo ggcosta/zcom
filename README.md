@@ -98,6 +98,22 @@ If the scene is missing or you change a factory script, rebuild it from the menu
   the bounds) and paints regolith / rock (slopes) / dark crater dust / hive creep. Fog + stronger SSAO for depth.
 - `SmokeTest -zcomTour` teleports through every area and screenshots it.
 
+## Playable character: Orbital Marshal (v4, TRELLIS.2)
+
+- **Sculpt**: `Art/Reference/Codex/gen3d/front_full.png` (the uncropped front view of the turnaround) -> Hugging Face
+  Space `microsoft/TRELLIS.2` (MIT weights; seed 1234, resolution 1024, GLB decimation 300k, texture 2048) ->
+  `Art/Reference/Codex/gen3d/marshal_trellis.glb`. Crisper armour than the Hunyuan3D-2 sculpt, and its own texture.
+- **Build**: `Tools/Blender/zcom_marine_trellis.py` runs the v3 pipeline below with three changes: the GLB is turned
+  to face -Y and welded, the albedo is baked from TRELLIS's texture (brightened; visor / chest lights and rank
+  chevrons still projected from the turnaround), and the skinning keeps the cape and torso off the arms.
+  Run: `Blender -b --factory-startup -P Tools/Blender/zcom_marine_trellis.py -- Assets/ZCOM/Resources/Models Tools/Blender/previews Art/Reference/Codex/gen3d/marshal_trellis.glb Art/Reference/Codex/marshal_turnaround.png`
+- **Library animation**: `Tools/Blender/zcom_marine_mocap.py ... <UAL1_Standard.glb> trellis` retargets Quaternius'
+  Universal Animation Library (CC0, not in the repo) onto the same rig -> `MarshalMoves.fbx`: Death, and one jog cycle
+  for every locomotion direction (Run; RunBack played backwards; StrafeL/R with the legs turned into the strafe and
+  the chest on the aim), so the 2D blend shares one rhythm and phase.
+- **Rifle hold**: chest height with the stock at the shoulder and the left hand on the handguard
+  (`GRIP` / `SUPPORT` / `STANCE_YAW` in `zcom_marine_trellis.py`, checked against the real `Weapon_*.fbx`).
+
 ## Playable character: Orbital Marshal (v3)
 
 - **Pipeline**: Codex turnaround (`Art/Reference/Codex/marshal_turnaround.png`, sliced views in `Art/Reference/Codex/gen3d/`)

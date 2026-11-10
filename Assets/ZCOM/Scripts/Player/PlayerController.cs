@@ -237,9 +237,9 @@ namespace Zcom
             animator.SetFloat(MoveXId, moveBlend.x);
             animator.SetFloat(MoveZId, moveBlend.y);
 
-            // stride sync: each clip covers a fixed distance per cycle (Run 5.2 m/s, RunBack 4.2, strafes 5.0 at 1x)
+            // stride sync: each clip covers a fixed distance per cycle (Run 5.53 m/s, RunBack and strafes 4.89 at 1x)
             Vector2 dir = moveBlend.sqrMagnitude > 0.001f ? moveBlend.normalized : Vector2.up;
-            float native = dir.y >= 0f ? Mathf.Lerp(5.0f, 5.6f, dir.y * dir.y) : Mathf.Lerp(5.0f, 4.2f, dir.y * dir.y);
+            float native = dir.y >= 0f ? Mathf.Lerp(4.89f, 5.53f, dir.y * dir.y) : 4.89f;
             float m = Mathf.Clamp01(moveBlend.magnitude);
             float sync = speed > 0.5f ? Mathf.Clamp(speed / (native * Mathf.Max(m, 0.35f)), 0.8f, 1.5f) : 1f;
             animator.speed = IsDashing ? 1.7f : Mathf.Lerp(1f, sync, Mathf.Clamp01((m - 0.3f) / 0.4f));
