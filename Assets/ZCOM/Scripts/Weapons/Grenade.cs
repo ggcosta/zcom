@@ -23,18 +23,25 @@ namespace Zcom
         static PhysicsMaterial bouncy;
         static readonly int EmissionId = Shader.PropertyToID("_EmissionColor");
 
+        /// <summary>Shell + glowing band (the thrown grenade, and the one held while the throw is aimed).
+        /// 0.17 m across: big enough to follow from the top-down camera, no longer head-sized next to the Marshal.</summary>
+        public static void BuildVisual(Transform parent)
+        {
+            var shell = Mats.Cached("GrenadeShell", () => Mats.Lit(new Color(0.15f, 0.16f, 0.18f), 0.8f, 0.6f));
+            var band = Mats.Cached("GrenadeBand", () => Mats.Lit(Color.black, 0f, 0.5f, Mats.HDR(new Color(1f, 0.3f, 0.1f), 2f)));
+            Prims.Part("Shell", PrimitiveType.Sphere, parent, Vector3.zero, Vector3.one * 0.17f, shell);
+            Prims.Part("Band", PrimitiveType.Cylinder, parent, Vector3.zero, new Vector3(0.185f, 0.022f, 0.185f), band);
+        }
+
         public static Grenade Spawn(Vector3 pos, Vector3 velocity, float fuse, float radius)
         {
             var go = new GameObject("Grenade");
             go.layer = 2; // Ignore Raycast: bullets pass through it
             go.transform.position = pos;
-            var shell = Mats.Cached("GrenadeShell", () => Mats.Lit(new Color(0.15f, 0.16f, 0.18f), 0.8f, 0.6f));
-            var band = Mats.Cached("GrenadeBand", () => Mats.Lit(Color.black, 0f, 0.5f, Mats.HDR(new Color(1f, 0.3f, 0.1f), 2f)));
-            Prims.Part("Shell", PrimitiveType.Sphere, go.transform, Vector3.zero, Vector3.one * 0.26f, shell);
-            var bandGo = Prims.Part("Band", PrimitiveType.Cylinder, go.transform, Vector3.zero, new Vector3(0.28f, 0.03f, 0.28f), band);
+            BuildVisual(go.transform);
 
             var col = go.AddComponent<SphereCollider>();
-            col.radius = 0.13f;
+            col.radius = 0.09f;
             if (bouncy == null)
                 bouncy = new PhysicsMaterial("GrenadeBounce") { bounciness = 0.35f, dynamicFriction = 0.6f, staticFriction = 0.6f, bounceCombine = PhysicsMaterialCombine.Maximum };
             col.sharedMaterial = bouncy;
@@ -62,7 +69,7 @@ namespace Zcom
             g.radius = radius;
             g.rb = rb;
             g.blink = light;
-            g.glow = bandGo.GetComponent<MeshRenderer>();
+            g.glow = go.transform.Find("Band").GetComponent<MeshRenderer>();
             return g;
         }
 

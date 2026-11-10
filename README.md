@@ -110,7 +110,9 @@ If the scene is missing or you change a factory script, rebuild it from the menu
 - **Library animation**: `Tools/Blender/zcom_marine_mocap.py ... <UAL1_Standard.glb> trellis` retargets Quaternius'
   Universal Animation Library (CC0, not in the repo) onto the same rig -> `MarshalMoves.fbx`: Death, and one jog cycle
   for every locomotion direction (Run; RunBack played backwards; StrafeL/R with the legs turned into the strafe and
-  the chest on the aim), so the 2D blend shares one rhythm and phase.
+  the chest on the aim), so the 2D blend shares one rhythm and phase; Idle keeps the rifle stance and takes its
+  breathing, weight shift and head drift from the library idle. The animator cross-fades an Idle state and a Move
+  state (the four run directions) on `Speed`.
 - **Rifle hold**: chest height with the stock at the shoulder and the left hand on the handguard
   (`GRIP` / `SUPPORT` / `STANCE_YAW` in `zcom_marine_trellis.py`, checked against the real `Weapon_*.fbx`).
 

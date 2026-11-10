@@ -6,8 +6,11 @@ using UnityEngine;
 namespace Zcom.EditorTools
 {
     /// <summary>
-    /// Builds Resources/Anim/Marshal.controller from the clips baked into Resources/Models/Marshal.fbx
-    /// (2D freeform-directional locomotion on MoveX / MoveZ + a Death state on the "Dead" trigger). Clips in
+    /// Builds Resources/Anim/Marshal.controller from the clips baked into Resources/Models/Marshal.fbx:
+    /// an Idle state, a Move state (2D freeform-directional blend of the four run directions on MoveX / MoveZ)
+    /// cross-faded on Speed, and a Death state on the "Dead" trigger. Idle is not part of the run blend: a blend
+    /// tree plays its children in sync, so mixing the 2.5 s idle with the 0.63 s run cycles put the legs in slow
+    /// motion every time the Marshal started or stopped. Clips in
     /// Resources/Models/MarshalMoves.fbx - library animation retargeted onto the same rig by
     /// Tools/Blender/zcom_marine_mocap.py - replace the procedural ones of the same name.
     /// Also builds Resources/Materials/MarshalArmor.mat from the baked texture set in Resources/Textures/Marshal.
@@ -38,19 +41,30 @@ namespace Zcom.EditorTools
             var ctrl = AnimatorController.CreateAnimatorControllerAtPath(ControllerPath);
             ctrl.AddParameter("MoveX", AnimatorControllerParameterType.Float);
             ctrl.AddParameter("MoveZ", AnimatorControllerParameterType.Float);
+            ctrl.AddParameter("Speed", AnimatorControllerParameterType.Float);
             ctrl.AddParameter("Dead", AnimatorControllerParameterType.Trigger);
-            var state = ctrl.CreateBlendTreeInController("Locomotion", out BlendTree tree, 0);
+            var sm = ctrl.layers[0].stateMachine;
+            var idle = sm.AddState("Idle", new Vector3(300, 0, 0));
+            idle.motion = Get("Idle");
+            var state = ctrl.CreateBlendTreeInController("Move", out BlendTree tree, 0);
             tree.blendType = BlendTreeType.FreeformDirectional2D;
             tree.blendParameter = "MoveX";
             tree.blendParameterY = "MoveZ";
-            tree.AddChild(Get("Idle"), Vector2.zero);
             tree.AddChild(Get("Run"), new Vector2(0f, 1f));
             tree.AddChild(Get("RunBack"), new Vector2(0f, -1f));
             // Blender +X is the character's left -> Unity local -X.
             if (Get("StrafeL")) tree.AddChild(Get("StrafeL"), new Vector2(-1f, 0f));
             if (Get("StrafeR")) tree.AddChild(Get("StrafeR"), new Vector2(1f, 0f));
-            var sm = ctrl.layers[0].stateMachine;
-            sm.defaultState = state;
+            sm.defaultState = idle;
+            // short cross-fades, a little hysteresis so a stick at the threshold does not flicker between them
+            var go = idle.AddTransition(state);
+            go.AddCondition(AnimatorConditionMode.Greater, 0.18f, "Speed");
+            go.hasExitTime = false;
+            go.duration = 0.14f;
+            var stop = state.AddTransition(idle);
+            stop.AddCondition(AnimatorConditionMode.Less, 0.1f, "Speed");
+            stop.hasExitTime = false;
+            stop.duration = 0.22f;
             var deathClip = Get("Death");
             if (deathClip)
             {

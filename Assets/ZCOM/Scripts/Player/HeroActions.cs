@@ -7,7 +7,8 @@ namespace Zcom
     /// on the gun and the HUD. Everything is procedural (no extra animation clips), applied after the Animator:
     ///  - Reload: the left hand leaves the handguard, pulls the spent cell, fetches a fresh one from the belt
     ///    (it is visible in the hand), slams it home in time with the gun's own reload events, and returns.
-    ///  - Grenade: the left arm cocks back while the throw is being aimed, then whips forward on release.
+    ///  - Grenade: the left arm cocks back with a grenade in the hand while the throw is being aimed, then whips
+    ///    forward on release.
     ///  - Hit: spine, chest and head flinch away from the blow.
     ///  - Dash: the body tucks into the dash and leaves a short trail of after-images.
     /// The right arm is never touched: it keeps the gun on target the whole time.
@@ -35,7 +36,7 @@ namespace Zcom
         Vector3 lastTarget;
         float ghostT;
 
-        Transform cellProp;
+        Transform cellProp, heldGrenade;
         MeshFilter cellMf;
         MeshRenderer cellMr;
         SkinnedMeshRenderer[] skins;
@@ -96,6 +97,7 @@ namespace Zcom
             if (!alive)
             {
                 if (cellProp) cellProp.gameObject.SetActive(false);
+                if (heldGrenade) heldGrenade.gameObject.SetActive(false);
                 return;
             }
             float dt = Time.deltaTime;
@@ -190,6 +192,26 @@ namespace Zcom
             }
 
             UpdateCellProp(showCell);
+            UpdateHeldGrenade(windup > 0.35f && throwT < 0f);
+        }
+
+        /// <summary>The grenade sits in the left palm while the throw is aimed; the real one spawns on release.</summary>
+        void UpdateHeldGrenade(bool show)
+        {
+            if (!show || !hand || !foreArm)
+            {
+                if (heldGrenade) heldGrenade.gameObject.SetActive(false);
+                return;
+            }
+            if (!heldGrenade)
+            {
+                heldGrenade = new GameObject("HeldGrenade").transform;
+                heldGrenade.SetParent(transform, false);
+                Grenade.BuildVisual(heldGrenade);
+            }
+            if (!heldGrenade.gameObject.activeSelf) heldGrenade.gameObject.SetActive(true);
+            Vector3 along = (hand.position - foreArm.position).normalized;
+            heldGrenade.SetPositionAndRotation(hand.position + along * 0.1f, hand.rotation);
         }
 
         /// <summary>Two-bone IK: bends the elbow to the right reach, swings the arm onto the target, then rolls the

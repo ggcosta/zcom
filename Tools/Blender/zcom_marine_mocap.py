@@ -195,6 +195,36 @@ def anim_run(arm, src, name="Run", N=19, stride=0.70, lift=0.8, bounce=0.45, sin
     return speed
 
 
+# ============================================================================ Idle
+
+def anim_idle(arm, src, name="Idle", clip_name="Idle_Loop", amount=1.4):
+    """The rifle stance of zcom_marine.anim_idle (staggered feet, lower body turned, head on the aim) brought to
+    life by the library idle: its breathing, weight shift and head drift drive the stance's hips, chest and head
+    (relative to the clip's first frame, scaled by `amount`). The feet stay planted where the stance puts them."""
+    N = src.length(clip_name)
+    clip = src.sample(clip_name, range(N + 1))
+    S0 = clip[0]
+
+    def motion(S, bone):
+        e = (src.delta(S, bone) @ src.delta(S0, bone).inverted()).to_euler("XYZ")
+        return math.degrees(e.x) * amount, math.degrees(e.y) * amount, math.degrees(e.z) * amount
+
+    p0 = S0["pelvis"].translation
+    zm.new_action(arm, name)
+    for fr, S in enumerate(clip):
+        zm.reset_pose(arm)
+        o = (S["pelvis"].translation - p0) * amount
+        hp, hr, hy = motion(S, "pelvis")
+        cp, cr, cy = motion(S, "spine_03")
+        _, _, ny = motion(S, "Head")
+        zm.pose_torso(arm, (o.x, o.y, -0.035 + o.z), -10 + hy, (1, 0, 0), 2.0 + hp, zm.STANCE_YAW - 4 + cy,
+                      chest_pitch=cp, roll=cr, head_yaw=18 + ny)
+        zm.pose_weapon_arms(arm, sway_yaw=0.5 * cy, sway_pitch=-9 + 0.5 * cp, drop=0.03)
+        zm.pose_legs(arm, {"L": (V((0.15, -0.17, 0.03)), 12, 0, 0), "R": (V((-0.135, 0.03, 0.03)), -22, 0, 0)}, V((0, -1, 0)))
+        zm.key_all(arm, fr)
+    print(f"[mocap] {name}: {N} frames ({N / zm.FPS:.1f} s) from {clip_name}")
+
+
 # ============================================================================ Death
 
 REL, FALL = 12, 13        # frame at which the right hand lets go of the rifle; frames it takes to hit the floor
@@ -449,11 +479,12 @@ if __name__ == "__main__":
     anim_run(arm, src, "RunBack", reverse=True, stride=0.62, lift=0.65, bounce=0.35)
     anim_run(arm, src, "StrafeL", heading=90.0, leg_yaw=40.0, stride=0.62, lift=0.7)
     anim_run(arm, src, "StrafeR", heading=-90.0, leg_yaw=-40.0, stride=0.62, lift=0.7)
+    anim_idle(arm, src)
     if PREVIEW:
         anim_run(arm, src, "RunB", N=17, stride=0.62)
         anim_run(arm, src, "RunFull", N=28, stride=1.0, lift=1.0, bounce=1.0, sink=1.0, lean=1.0)
     src.remove()
-    keep = ("Death", "Run", "RunBack", "StrafeL", "StrafeR")
+    keep = ("Death", "Run", "RunBack", "StrafeL", "StrafeR", "Idle")
     extra = [a.name for a in bpy.data.actions if a.name in ("RunB", "RunFull")]
     for a in list(bpy.data.actions):
         if a.name not in keep and a.name not in extra:
@@ -473,4 +504,5 @@ if __name__ == "__main__":
         strips(arm, ["Death"], K=5, res=600, views=((90, 4), (35, 30), (-140, 35)), tag="_big")
         strips(arm, ["Run", "RunB", "RunFull", "ProcRun"], K=8, res=375, views=((90, 4), (0, 8)), tag="_cmp")
         strips(arm, ["Run", "RunBack", "StrafeL", "StrafeR"], K=8, res=375, views=((90, 4), (0, 60)), tag="_dir")
+        strips(arm, ["Idle"], K=8, res=375, views=((-30, 8), (90, 4)), tag="_idle")
     print("[mocap] done")

@@ -59,7 +59,7 @@ namespace Zcom
         float twist, twistVel;
         float deathT = -1f;
         float trailT;
-        Vector2 moveBlend;
+        Vector2 moveBlend, moveDir = Vector2.up;
         float yawVel, aimTwist;
         Vector3 prevVel, accelSmooth, accelVel;
         float bank, bankVel, lastYaw;
@@ -67,6 +67,7 @@ namespace Zcom
         bool footDownL = true, footDownR = true;
         float rigKickBack, rigKickBackVel, rigKickPitch, rigKickPitchVel, rigKickYaw, rigKickYawVel;
         static readonly int MoveXId = Animator.StringToHash("MoveX");
+        static readonly int SpeedId = Animator.StringToHash("Speed");
         static readonly int MoveZId = Animator.StringToHash("MoveZ");
         static readonly int DeadId = Animator.StringToHash("Dead");
 
@@ -234,15 +235,18 @@ namespace Zcom
             if (target.sqrMagnitude > 1f) target.Normalize();
             if (speed < 0.2f) target = Vector2.zero;
             moveBlend = Vector2.Lerp(moveBlend, target, 1f - Mathf.Exp(-9f * dt));
-            animator.SetFloat(MoveXId, moveBlend.x);
-            animator.SetFloat(MoveZId, moveBlend.y);
+            // Idle and Move are separate states (cross-faded on Speed); the Move blend only needs the direction.
+            float m = Mathf.Clamp01(moveBlend.magnitude);
+            if (target.sqrMagnitude > 0.01f) moveDir = Vector2.Lerp(moveDir, target.normalized, 1f - Mathf.Exp(-12f * dt));
+            Vector2 dir = moveDir.sqrMagnitude > 0.001f ? moveDir.normalized : Vector2.up;
+            animator.SetFloat(MoveXId, dir.x);
+            animator.SetFloat(MoveZId, dir.y);
+            animator.SetFloat(SpeedId, m);
 
             // stride sync: each clip covers a fixed distance per cycle (Run 5.53 m/s, RunBack and strafes 4.89 at 1x)
-            Vector2 dir = moveBlend.sqrMagnitude > 0.001f ? moveBlend.normalized : Vector2.up;
             float native = dir.y >= 0f ? Mathf.Lerp(4.89f, 5.53f, dir.y * dir.y) : 4.89f;
-            float m = Mathf.Clamp01(moveBlend.magnitude);
-            float sync = speed > 0.5f ? Mathf.Clamp(speed / (native * Mathf.Max(m, 0.35f)), 0.8f, 1.5f) : 1f;
-            animator.speed = IsDashing ? 1.7f : Mathf.Lerp(1f, sync, Mathf.Clamp01((m - 0.3f) / 0.4f));
+            float sync = Mathf.Clamp(speed / native, 0.7f, 1.5f);
+            animator.speed = IsDashing ? 1.7f : Mathf.Lerp(1f, sync, Mathf.Clamp01((m - 0.15f) / 0.3f));
 
             // lean into acceleration (body weight) and bank into turns
             Vector3 planarVel = new Vector3(velocity.x, 0f, velocity.z);
