@@ -86,7 +86,7 @@ namespace Zcom
             cellSize = 32, rechargeTime = 1.3f,
             baseSpread = 0.8f, spreadPerShot = 0.55f, maxSpread = 5.5f, spreadRecovery = 12f, moveSpread = 1.8f,
             boltSpeed = 110f, boltLength = 2.2f, boltWidth = 0.22f,
-            shake = 0.085f, cameraKick = 0.2f, kickBack = 0.12f, kickPitch = 9f, playerRecoil = 0.05f,
+            shake = 0.035f, cameraKick = 0.05f, kickBack = 0.12f, kickPitch = 9f, playerRecoil = 0.05f,
             flashScale = 1f, sound = "ion", soundVolume = 0.4f,
         };
 
@@ -102,8 +102,8 @@ namespace Zcom
             cellSize = 6, rechargeTime = 1.6f,
             baseSpread = 8f, spreadPerShot = 0f, maxSpread = 8f, spreadRecovery = 20f, moveSpread = 1.5f,
             boltSpeed = 70f, boltLength = 1.1f, boltWidth = 0.2f,
-            shake = 0.24f, cameraKick = 0.45f, kickBack = 0.24f, kickPitch = 20f, playerRecoil = 0.15f,
-            hitStopPerShot = 0.02f, flashScale = 1.7f, sound = "nova", soundVolume = 0.6f,
+            shake = 0.15f, cameraKick = 0.18f, kickBack = 0.24f, kickPitch = 20f, playerRecoil = 0.15f,
+            hitStopPerShot = 0f, flashScale = 1.7f, sound = "nova", soundVolume = 0.6f,
         };
 
         static WeaponDef MakeHelix() => new WeaponDef
@@ -117,7 +117,7 @@ namespace Zcom
             beam = true, tickInterval = 0.08f, energyPerTick = 2,
             damage = 12f, pierce = 3, critChance = 0f, range = 20f, knockback = 0.6f,
             cellSize = 100, rechargeTime = 2f,
-            shake = 0.035f, cameraKick = 0.03f, kickBack = 0.02f, kickPitch = 1.5f, playerRecoil = 0.01f,
+            shake = 0.012f, cameraKick = 0.01f, kickBack = 0.02f, kickPitch = 1.5f, playerRecoil = 0.01f,
             flashScale = 1.2f, sound = "beam_start", soundVolume = 0.5f,
         };
     }

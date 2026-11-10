@@ -280,7 +280,7 @@ namespace Zcom
             var v = I;
             v.Billboard(v.matFlash, pos + dir * 0.15f * scale, Random.Range(0.9f, 1.3f) * scale, Random.Range(0.5f, 0.8f) * scale, 0.05f, Mats.HDR(color, 6f));
             v.Billboard(v.matGlow, pos, 2.2f * scale, 0.8f * scale, 0.07f, Mats.HDR(color * 0.85f, 1.6f));
-            LightFlash(pos + Vector3.up * 0.2f, color, 6f * scale, 7f * scale, 0.06f);
+            LightFlash(pos + Vector3.up * 0.2f, color, 3f * scale, 4.5f * scale, 0.06f);
             int sparks = Mathf.RoundToInt(4 * scale * scale);
             for (int i = 0; i < sparks; i++)
                 Emit(v.sparks, pos, (dir + Random.insideUnitSphere * 0.35f * scale).normalized * Random.Range(9f, 16f), Random.Range(0.04f, 0.08f), Random.Range(0.06f, 0.14f), color);
@@ -326,7 +326,7 @@ namespace Zcom
             v.Billboard(v.matGlow, pos, 1.6f * scale, 0.6f * scale, 0.07f, Mats.HDR(color, 3f));
             v.Billboard(v.matFlash, pos + dir * 0.1f, 0.7f * scale, 0.35f * scale, 0.04f, Mats.HDR(Color.Lerp(color, Color.white, 0.6f), 5f));
             v.Flat(v.flats, v.matRing, pos, 0.15f * scale, 0.9f * scale, 0.12f, Mats.HDR(color, 2.5f), false, false);
-            LightFlash(pos + Vector3.up * 0.2f, color, 5f * scale, 6f * scale, 0.06f);
+            LightFlash(pos + Vector3.up * 0.2f, color, 3.5f * scale, 5f * scale, 0.06f);
             int n = Mathf.RoundToInt(3 * scale * scale);
             for (int i = 0; i < n; i++)
                 Emit(v.sparks, pos, (dir + Random.insideUnitSphere * 0.5f).normalized * Random.Range(6f, 12f), Random.Range(0.03f, 0.06f), Random.Range(0.06f, 0.14f), Color.Lerp(color, Color.white, 0.4f));

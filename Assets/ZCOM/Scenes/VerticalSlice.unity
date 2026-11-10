@@ -3322,7 +3322,8 @@ MonoBehaviour:
   lookAhead: 0.38
   maxLookAhead: 6.5
   maxShakeOffset: 0.7
-  maxShakeRoll: 2.5
+  maxShakeRoll: 1
+  maxKick: 0.18
   traumaDecay: 1.5
 --- !u!114 &150714187
 MonoBehaviour:

@@ -226,6 +226,7 @@ namespace Zcom
                     tileSize = new Vector2(tile, tile),
                     normalScale = 1f,
                     smoothness = smooth,
+                    smoothnessSource = TerrainLayerSmoothnessSource.Constant,   // the RGB textures carry no gloss
                     metallic = 0f,
                     diffuseRemapMax = tint,
                 };

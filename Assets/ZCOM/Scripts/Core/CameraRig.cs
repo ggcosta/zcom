@@ -26,7 +26,9 @@ namespace Zcom
         public float maxLookAhead = 6.5f;
         [Header("Shake")]
         public float maxShakeOffset = 0.7f;
-        public float maxShakeRoll = 2.5f;
+        public float maxShakeRoll = 1f;
+        [Tooltip("Cap on the summed directional kicks (m), so automatic fire nudges the view instead of dragging it.")]
+        public float maxKick = 0.18f;
         public float traumaDecay = 1.5f;
 
         Camera cam;
@@ -47,7 +49,7 @@ namespace Zcom
         }
 
         public void AddTrauma(float amount) { trauma = Mathf.Clamp01(trauma + amount); }
-        public void Kick(Vector3 worldDir, float amount) { kick += worldDir.normalized * amount; }
+        public void Kick(Vector3 worldDir, float amount) { kick = Vector3.ClampMagnitude(kick + worldDir.normalized * amount, maxKick); }
 
         void LateUpdate()
         {
