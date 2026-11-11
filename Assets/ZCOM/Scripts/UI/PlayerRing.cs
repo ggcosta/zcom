@@ -43,7 +43,7 @@ namespace Zcom
             shield = Arc("Shield", 200f, 2.5f);
             health = Arc("Health", 186f, 2.5f);
 
-            grenadePips = new Image[4];
+            grenadePips = new Image[3];
             for (int i = 0; i < grenadePips.Length; i++)
             {
                 float ang = (180f + Span * 0.5f + 8f + i * 8f) * Mathf.Deg2Rad;    // just past the left end of the arcs (clockwise from up)

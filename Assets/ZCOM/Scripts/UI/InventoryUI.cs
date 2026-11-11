@@ -314,7 +314,7 @@ namespace Zcom
             var gico = UiKit.Art("a_icon_grenade");
             if (gico) UiKit.Img("NadeIcon", lp, gico, UiKit.TextDim, new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(sx - 2, sy - 70), new Vector2(18, 18));
             TacKit.MicroText("NadeLbl", lp, "GRN", new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(sx + 21, sy - 70), TextAnchor.MiddleLeft, 12);
-            nadePips = new Image[4];
+            nadePips = new Image[3];
             for (int i = 0; i < nadePips.Length; i++)
                 nadePips[i] = UiKit.Img("Nade" + i, lp, TacKit.Pip, Amber, new Vector2(0, 1), new Vector2(0.5f, 0.5f), new Vector2(sx + 60 + i * 16, sy - 70), new Vector2(11, 11));
 

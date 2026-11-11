@@ -68,7 +68,6 @@ namespace Zcom
             camps = FindObjectsByType<AlienCamp>(FindObjectsSortMode.None);
             Extraction = FindFirstObjectByType<ExtractionZone>();
             if (!GetComponent<AmbientAudio>()) gameObject.AddComponent<AmbientAudio>();
-            Profile.BeginRaid();
         }
 
         void Start()
@@ -78,12 +77,8 @@ namespace Zcom
 
         void Update()
         {
-            // after the raid: R opens the forward base (which deploys the next raid); without one, restart directly
             if ((IsGameOver || IsExtracted) && Time.unscaledTime - gameOverTime > 1.0f && PlayerInputSource.Current.restart)
-            {
-                if (!BaseUI.I) Restart();
-                else if (!BaseUI.I.IsOpen) BaseUI.I.Open();
-            }
+                Restart();
         }
 
         public void OnAlienKilled(Alien alien)
@@ -113,7 +108,6 @@ namespace Zcom
             if (IsExtracted || IsGameOver) return;
             IsExtracted = true;
             gameOverTime = Time.unscaledTime;
-            Profile.CommitExtraction(player ? player.inventory : null);
             ProcAudio.Play("clear", 0.7f, 0f);
             if (RaidUI.I) RaidUI.I.ShowSummary(true);
         }
@@ -123,7 +117,6 @@ namespace Zcom
             if (IsGameOver) return;
             IsGameOver = true;
             gameOverTime = Time.unscaledTime;
-            Profile.CommitDeath(player ? player.inventory : null);
             if (RaidUI.I) RaidUI.I.ShowSummary(false);
             else if (Hud.I) Hud.I.ShowGameOver(Kills, Score);
         }

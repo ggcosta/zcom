@@ -28,7 +28,6 @@ namespace Zcom
         readonly Vector3[] ringBuf = new Vector3[RingPoints];
 
         public int Charges => charges;
-        public int BaseMaxCharges { get; private set; } = 2;
         public bool IsAiming => aiming;
         /// <summary>0..1 progress of the next charge (0 when full).</summary>
         public float RechargeProgress => charges >= maxCharges ? 0f : recharge / rechargeTime;
@@ -36,8 +35,6 @@ namespace Zcom
         void Awake()
         {
             owner = GetComponent<PlayerController>();
-            BaseMaxCharges = maxCharges;
-            maxCharges += Profile.GrenadeBonus;      // grenade rig upgrade bought at the base
             charges = maxCharges;
             var arcMat = Mats.Cached("GrenadeArc", () => Mats.Additive(null, Mats.HDR(new Color(1f, 0.4f, 0.1f), 2f)));
             var ringMat = Mats.Cached("GrenadeRing", () => Mats.Additive(null, Mats.HDR(new Color(1f, 0.3f, 0.08f), 1.6f)));

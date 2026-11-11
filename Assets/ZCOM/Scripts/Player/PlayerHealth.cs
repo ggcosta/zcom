@@ -15,9 +15,6 @@ namespace Zcom
         float lastHitTime = -10f;
 
         public float Health { get; private set; }
-        /// <summary>Max health / shield before the base's suit upgrades.</summary>
-        public float BaseMaxHealth { get; private set; } = 100f;
-        public float BaseMaxShield { get; private set; } = 50f;
         public bool IsAlive => Health > 0f;
         public float Health01 => Health / maxHealth;
 
@@ -31,11 +28,6 @@ namespace Zcom
 
         void Awake()
         {
-            // suit upgrades bought at the base
-            BaseMaxHealth = maxHealth;
-            BaseMaxShield = maxShield;
-            maxHealth += Profile.HealthBonus;
-            maxShield += Profile.ShieldBonus;
             Health = maxHealth;
             Shield = maxShield;
             pc = GetComponent<PlayerController>();
