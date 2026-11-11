@@ -79,6 +79,7 @@ namespace Zcom
                 {
                     id = id, name = w.displayName, description = w.description, category = ItemCategory.Weapon,
                     maxStack = 1, color = w.color, rarity = w.rarity, rarityColor = w.rarityColor, weapon = k,
+                    icon = "weapon_" + k.ToString().ToLowerInvariant(),      // painted profile (Resources/UI), else a 3D render
                     weight = k == WeaponKind.HelixBeam ? 4.6f : k == WeaponKind.NovaScatter ? 3.8f : 3.1f,
                     value = k == WeaponKind.HelixBeam ? 2400 : k == WeaponKind.NovaScatter ? 1200 : 500,
                 };

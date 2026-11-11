@@ -25,6 +25,8 @@ namespace Zcom
         WeaponKind? shownBodyWeapon, shownWeapon;
         float bodyYaw = 200f, weaponSpin;
         public bool BodyViewActive { get; set; }
+        /// <summary>The spinning 3D weapon render; off while the HUD shows the painted weapon art instead.</summary>
+        public bool WeaponViewActive { get; set; } = true;
 
         public static PreviewStage Ensure()
         {
@@ -159,6 +161,7 @@ namespace Zcom
             weaponRoot.rotation = Quaternion.Euler(Mathf.Sin(weaponSpin * 0.7f) * 4f, 12f + Mathf.Sin(weaponSpin * 0.45f) * 14f, 0f);
             weaponCam.transform.position = WeaponSpot + new Vector3(0f, 0.05f, 3f);
             weaponCam.transform.rotation = Quaternion.LookRotation(Vector3.back);
+            weaponCam.enabled = WeaponViewActive;
 
             if (!marine) return;
             if (!BodyViewActive) bodyYaw = Mathf.MoveTowardsAngle(bodyYaw, 200f, Time.unscaledDeltaTime * 30f);

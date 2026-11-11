@@ -20,7 +20,13 @@ namespace Zcom.EditorTools
         const string KeyPassive = "zcom_smoke_passive";
         const string KeyShowcase = "zcom_smoke_showcase";
         const string KeyTour = "zcom_smoke_tour";
-        const string KeyUi = "zcom_smoke_ui";       // "A" = tac-link, "B" = field kit, "" = the saved preference
+        const string KeyUi = "zcom_smoke_ui";   // "A" = tac-link, "B" = field kit, "" = the saved preference
+        const string KeyVideo = "zcom_smoke_video";   // -zcomVideo: record every frame at 30 fps (FrameRecorder) instead of screenshots
+        const int VideoFps = 30;
+        static int videoStartFrame = -1;
+        static bool Video => SessionState.GetBool(KeyVideo, false);
+        /// <summary>Seconds since play started: real time normally, frame-locked game time when recording a video.</summary>
+        static float Clock() => Video ? (videoStartFrame < 0 ? 0f : (Time.frameCount - videoStartFrame) / (float)VideoFps) : Time.realtimeSinceStartup - playStart;
         static int tourIndex;
         static float lineupShotAt = -1f, runShotAt = -1f;
         static int actStage = -1; static float actAt;
@@ -182,6 +188,7 @@ namespace Zcom.EditorTools
             SessionState.SetBool(KeyPassive, System.Array.IndexOf(args, "-zcomPassive") >= 0);
             SessionState.SetBool(KeyShowcase, System.Array.IndexOf(args, "-zcomShowcase") >= 0);
             SessionState.SetBool(KeyTour, System.Array.IndexOf(args, "-zcomTour") >= 0);
+            SessionState.SetBool(KeyVideo, System.Array.IndexOf(args, "-zcomVideo") >= 0);
             Start(outDir, duration);
         }
 
@@ -218,7 +225,7 @@ namespace Zcom.EditorTools
                 playStart = Time.realtimeSinceStartup;
                 Setup();
             }
-            float t = Time.realtimeSinceStartup - playStart;
+            float t = Clock();
             float duration = SessionState.GetFloat(KeyDuration, 32f);
 
             // Opening shot, then combat shots whenever enough aliens are on screen.
@@ -655,8 +662,14 @@ namespace Zcom.EditorTools
             var cam = CameraRig.I ? CameraRig.I.Cam : Camera.main;
             if (Application.isBatchMode && cam)
             {
-                rt = new RenderTexture(1600, 900, 24);
+                rt = Video ? new RenderTexture(1920, 1080, 24) : new RenderTexture(1600, 900, 24);
                 cam.targetTexture = rt;
+            }
+            if (Video && rt)
+            {
+                Time.captureFramerate = VideoFps;
+                videoStartFrame = Time.frameCount;
+                FrameRecorder.Begin(rt, Path.Combine(SessionState.GetString(KeyOut, "."), "frames"));
             }
             if (Hud.I && cam)
             {
@@ -682,6 +695,7 @@ namespace Zcom.EditorTools
 
         static void Capture(string name)
         {
+            if (Video) return;          // the recorder grabs every frame instead
             var cam = CameraRig.I ? CameraRig.I.Cam : null;
             if (!cam) return;
             var target = cam.targetTexture;
@@ -734,7 +748,7 @@ namespace Zcom.EditorTools
             float now = Time.time;
             Vector3 pos = p.transform.position;
             var inv = p.inventory;
-            float tReal = Time.realtimeSinceStartup - playStart;
+            float tReal = Clock();
             Vector3 fwd = cam.transform.forward; fwd.y = 0; fwd.Normalize();
             Vector3 right = cam.transform.right; right.y = 0; right.Normalize();
             Vector2 MoveTo(Vector3 dir) { dir.y = 0f; if (dir.sqrMagnitude < 0.01f) return Vector2.zero; dir.Normalize(); return new Vector2(Vector3.Dot(dir, right), Vector3.Dot(dir, fwd)); }

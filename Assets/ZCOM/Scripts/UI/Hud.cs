@@ -57,6 +57,7 @@ namespace Zcom
 
         // weapon
         RawImage weaponView;
+        Image weaponArt;
         Text weaponName, ammoText, ammoMax, weaponState, fireMode;
         DecodeText weaponDecode;
         RectTransform tickStrip;
@@ -316,6 +317,10 @@ namespace Zcom
             wr.anchoredPosition = new Vector2(172, 6);
             wr.sizeDelta = new Vector2(312, 130);
             if (PreviewStage.I) weaponView.texture = PreviewStage.I.WeaponTex;
+            // painted profile of the weapon (takes over from the 3D render when the item has one)
+            weaponArt = UiKit.Img("WeaponArt", p, null, Color.white, new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(172, 6), new Vector2(296, 116));
+            weaponArt.preserveAspect = true;
+            weaponArt.enabled = false;
             // holo pedestal lines under the render
             UiKit.Img("Pedestal", p, UiKit.FadeLine, A(Cyan, 0.45f), new Vector2(0, 0), new Vector2(0, 0.5f), new Vector2(172, 30), new Vector2(130, 1.5f));
             UiKit.Img("PedestalL", p, UiKit.FadeLine, A(Cyan, 0.45f), new Vector2(0, 0), new Vector2(0, 0.5f), new Vector2(172, 30), new Vector2(130, 1.5f)).rectTransform.localScale = new Vector3(-1, 1, 1);
@@ -824,6 +829,7 @@ namespace Zcom
                 {
                     shownWeapon = null;
                     weaponDecode.Set(UiKit.Spaced("UNARMED"));
+                    weaponArt.enabled = false;
                     fireMode.text = "";
                     ammoText.text = "--";
                     ammoMax.text = "";
@@ -837,6 +843,11 @@ namespace Zcom
                 {
                     shownWeapon = def.kind;
                     weaponDecode.Set(UiKit.Spaced(def.displayName), 0.45f);
+                    var art = Items.Get(Items.ForWeapon(def.kind)).icon is string ic && !string.IsNullOrEmpty(ic) ? UiKit.Art(ic) : null;
+                    weaponArt.sprite = art;
+                    weaponArt.enabled = art;
+                    weaponView.enabled = !art;
+                    if (PreviewStage.I) PreviewStage.I.WeaponViewActive = !art;
                     fireMode.text = def.beam ? "CONTINUOUS BEAM  //  PIERCING" : def.pellets > 1 ? $"SCATTER  x{def.pellets}  //  SEMI" : "FULL AUTO  //  PLASMA BOLT";
                     ammoPunch = 1f;
                     lastAmmo = -1;
@@ -864,6 +875,9 @@ namespace Zcom
                 ammoMax.text = $"/ {g.MagazineSize}";
                 ammoMax.rectTransform.anchoredPosition = new Vector2(WeaponCol + ammoText.preferredWidth + 12f, 46f);
                 ammoPunch = Mathf.MoveTowards(ammoPunch, 0f, dt * 6f);
+                // the weapon art floats gently and kicks back with every shot
+                weaponArt.rectTransform.anchoredPosition = new Vector2(172f - ammoPunch * 10f, 6f + Mathf.Sin(Time.unscaledTime * 1.3f) * 2.5f);
+                weaponArt.rectTransform.localRotation = Quaternion.Euler(0f, 0f, ammoPunch * 2.5f);
                 float s = 1f + ammoPunch * 0.08f;
                 ammoText.rectTransform.localScale = new Vector3(s, s, 1f);
 
