@@ -21,6 +21,10 @@ namespace Zcom.EditorTools
         const string KeyShowcase = "zcom_smoke_showcase";
         const string KeyTour = "zcom_smoke_tour";
         const string KeyUi = "zcom_smoke_ui";   // "A" = tac-link, "B" = field kit, "" = the saved preference
+        const string KeyBase = "zcom_smoke_base";     // -zcomBase: loot, extract, shop at the forward base, redeploy
+        static int baseStep;
+        static float baseStepAt;
+        static GameManager setupFor;
         const string KeyVideo = "zcom_smoke_video";   // -zcomVideo: record every frame at 30 fps (FrameRecorder) instead of screenshots
         const int VideoFps = 30;
         static int videoStartFrame = -1;
@@ -156,6 +160,7 @@ namespace Zcom.EditorTools
         {
             if (!SessionState.GetBool(KeyActive, false)) return;
             InventoryUI.FocusBlur = false;      // captures render to a texture, where the blur would also hit the UI
+            Profile.PathOverride = Path.Combine(SessionState.GetString(KeyOut, "."), "profile.json");   // never the player's own progress
             string ui = SessionState.GetString(KeyUi, "");
             if (ui == "A") UiStyle.Override = UiDesign.TacLink;
             else if (ui == "B") UiStyle.Override = UiDesign.FieldKit;
@@ -189,6 +194,7 @@ namespace Zcom.EditorTools
             SessionState.SetBool(KeyShowcase, System.Array.IndexOf(args, "-zcomShowcase") >= 0);
             SessionState.SetBool(KeyTour, System.Array.IndexOf(args, "-zcomTour") >= 0);
             SessionState.SetBool(KeyVideo, System.Array.IndexOf(args, "-zcomVideo") >= 0);
+            SessionState.SetBool(KeyBase, System.Array.IndexOf(args, "-zcomBase") >= 0);
             Start(outDir, duration);
         }
 
@@ -196,6 +202,7 @@ namespace Zcom.EditorTools
         {
             Directory.CreateDirectory(outDir);
             File.WriteAllText(Path.Combine(outDir, "errors.txt"), "");
+            if (File.Exists(Path.Combine(outDir, "profile.json"))) File.Delete(Path.Combine(outDir, "profile.json"));   // every run starts as a fresh operative
             SessionState.SetBool(KeyActive, true);
             SessionState.SetString(KeyOut, outDir);
             SessionState.SetInt(KeyErrors, 0);
@@ -225,6 +232,8 @@ namespace Zcom.EditorTools
                 playStart = Time.realtimeSinceStartup;
                 Setup();
             }
+            else if (GameManager.I && GameManager.I != setupFor) Setup();      // a redeploy reloaded the scene
+            if (SessionState.GetBool(KeyBase, false)) BaseTick(Clock());
             float t = Clock();
             float duration = SessionState.GetFloat(KeyDuration, 32f);
 
@@ -658,6 +667,7 @@ namespace Zcom.EditorTools
 
         static void Setup()
         {
+            setupFor = GameManager.I;
             PlayerInputSource.Override = Autopilot;
             var cam = CameraRig.I ? CameraRig.I.Cam : Camera.main;
             if (Application.isBatchMode && cam)
@@ -665,7 +675,7 @@ namespace Zcom.EditorTools
                 rt = Video ? new RenderTexture(1920, 1080, 24) : new RenderTexture(1600, 900, 24);
                 cam.targetTexture = rt;
             }
-            if (Video && rt)
+            if (Video && rt && videoStartFrame < 0)
             {
                 Time.captureFramerate = VideoFps;
                 videoStartFrame = Time.frameCount;
@@ -703,7 +713,7 @@ namespace Zcom.EditorTools
             if (temp) { target = new RenderTexture(1600, 900, 24); cam.targetTexture = target; }
             // "_ui" twin without post-processing: in these texture captures the overlay UI goes through bloom / grain /
             // SMAA, which it does not on screen, so this is the honest view of the interface
-            if (name.Contains("combat") || name.Contains("inventory") || name.Contains("crate") || name.Contains("start"))
+            if (name.Contains("combat") || name.Contains("inventory") || name.Contains("crate") || name.Contains("start") || name.Contains("base"))
             {
                 var cd = UnityEngine.Rendering.Universal.CameraExtensions.GetUniversalAdditionalCameraData(cam);
                 bool pp = cd.renderPostProcessing;
@@ -732,10 +742,69 @@ namespace Zcom.EditorTools
             Object.DestroyImmediate(tex);
         }
 
+        static bool basePressRestart;
+
+        /// <summary>
+        /// -zcomBase: gives the operative loot and credits, extracts, opens the forward base, buys an upgrade, equips a
+        /// stashed weapon and redeploys, capturing each step.
+        /// </summary>
+        static void BaseTick(float t)
+        {
+            var p = PlayerController.I;
+            var gm = GameManager.I;
+            if (!p || !gm) return;
+            void Next(float wait) { baseStep++; baseStepAt = t + wait; }
+            if (t < baseStepAt) return;
+            switch (baseStep)
+            {
+                case 0:      // a raid's worth of loot
+                    Profile.Grant(2500);
+                    p.inventory.AddItem(new ItemStack(ItemId.Stone, 18));
+                    p.inventory.AddItem(new ItemStack(ItemId.Gold, 9));
+                    p.inventory.AddItem(new ItemStack(ItemId.Xenite, 4));
+                    p.inventory.Backpack.Add(new ItemStack(ItemId.NovaScatter, 1));
+                    Next(1.5f);
+                    break;
+                case 1: gm.OnExtracted(); Next(2.2f); break;
+                case 2: Capture("base_0_summary"); basePressRestart = true; Next(1.6f); break;
+                case 3: Capture("base_1_open"); Next(0.2f); break;
+                case 4:
+                    {
+                        Profile.SellAllResources();
+                        Profile.BuyUpgrade(Profile.Upgrades[0]);
+                        Profile.BuyUpgrade(Profile.Upgrades[2]);
+                        for (int i = 0; i < Profile.Stash.Size; i++)
+                            if (Items.IsWeapon(Profile.Stash[i].id)) { Profile.ToggleEquip(Profile.Stash, i); break; }
+                        Next(1.0f);
+                        break;
+                    }
+                case 5: Capture("base_2_after_shopping"); basePressRestart = true; Next(4f); break;
+                case 6:
+                    Log($"redeployed: maxHealth={p.health.maxHealth} grenades={p.grenades.maxCharges} loadout=[{p.inventory.WeaponIn(0)},{p.inventory.WeaponIn(1)},{p.inventory.WeaponIn(2)}] credits={Profile.Credits} raids={Profile.Raids} extractions={Profile.Extractions}");
+                    Capture("base_3_redeployed_combat");
+                    SessionState.SetFloat(KeyDuration, t + 0.5f);
+                    Next(999f);
+                    break;
+            }
+        }
+
+        static void Log(string s)
+        {
+            string dir = SessionState.GetString(KeyOut, "");
+            if (dir != "") File.AppendAllText(Path.Combine(dir, "base.txt"), s + "\n");
+            Debug.Log("[SmokeTest] " + s);
+        }
+
         static PlayerInputFrame Autopilot()
         {
             var f = new PlayerInputFrame { slot = -1 };
             if (SessionState.GetBool(KeyTour, false)) return f;
+            if (SessionState.GetBool(KeyBase, false))
+            {
+                f.restart = basePressRestart;
+                basePressRestart = false;
+                return f;
+            }
             if (SessionState.GetBool(KeyPassive, false))
             {
                 f.restart = GameManager.I && GameManager.I.IsGameOver;

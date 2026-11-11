@@ -73,7 +73,7 @@ namespace Zcom
             summaryLoot = UiKit.Label("Loot", sc, "", 20, UiKit.TextColor, TextAnchor.UpperLeft, new Vector2(0.5f, 1f), new Vector2(0f, 1f), new Vector2(20, -170), new Vector2(240, 160), false);
             summaryStats.lineSpacing = summaryLoot.lineSpacing = 1.3f;
             UiKit.KeyCap("Key", sc, "R", new Vector2(0.5f, 0f), new Vector2(1f, 0.5f), new Vector2(-50, 40), 16);
-            UiKit.Label("Again", sc, UiKit.Spaced("NEW RAID"), 18, Cyan, TextAnchor.MiddleLeft, new Vector2(0.5f, 0f), new Vector2(0f, 0.5f), new Vector2(-38, 40), new Vector2(200, 26), false);
+            UiKit.Label("Again", sc, UiKit.Spaced("FORWARD BASE"), 18, Cyan, TextAnchor.MiddleLeft, new Vector2(0.5f, 0f), new Vector2(0f, 0.5f), new Vector2(-38, 40), new Vector2(200, 26), false);
             sum.gameObject.SetActive(false);
         }
 
@@ -154,6 +154,11 @@ namespace Zcom
             }
         }
 
+        public void HideSummary()
+        {
+            if (summaryGroup) summaryGroup.gameObject.SetActive(false);
+        }
+
         public void ShowSummary(bool extracted)
         {
             if (summaryShown) return;
@@ -176,7 +181,7 @@ namespace Zcom
                 $"<color=#{hex(UiKit.TextDim)}>ELIMINATIONS</color>   {(gm ? gm.Kills : 0)}\n" +
                 $"<color=#{hex(UiKit.TextDim)}>CAMPS CLEARED</color>   {(gm ? gm.CampsCleared : 0)} / {(gm ? gm.CampsTotal : 0)}";
             summaryLoot.text = extracted
-                ? $"<color=#{hex(UiKit.TextDim)}>LOOT SECURED</color>\n<size=26><color=#{hex(UiKit.Amber)}>{value:N0} cr</color></size>\n<color=#{hex(UiKit.TextDim)}>ITEMS</color>   {items}"
+                ? $"<color=#{hex(UiKit.TextDim)}>LOOT SECURED  -  TO STASH</color>\n<size=26><color=#{hex(UiKit.Amber)}>{value:N0} cr</color></size>\n<color=#{hex(UiKit.TextDim)}>ITEMS</color>   {items}"
                 : $"<color=#{hex(UiKit.TextDim)}>LOOT LOST</color>\n<size=26><color=#{hex(UiKit.Danger)}>{value:N0} cr</color></size>\n<color=#{hex(UiKit.TextDim)}>ITEMS</color>   {items}";
             summaryGroup.alpha = 0f;
             summaryGroup.gameObject.SetActive(true);

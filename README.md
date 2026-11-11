@@ -91,6 +91,18 @@ If the scene is missing or you change a factory script, rebuild it from the menu
 - Level art, VFX and **audio are procedural** (primitives, generated textures, synthesized SFX).
   Sounds are played by id through `ProcAudio.Play("shot")` etc.
 
+## Forward base (between raids)
+
+After a raid, R on the summary opens the **forward base**; DEPLOY (or R) starts the next raid. Progress is kept in
+`Scripts/Core/Profile.cs` (JSON in `Application.persistentDataPath/zcom_profile.json`; delete it to start over):
+- **Extract** and the weapons you carry stay in your loadout while the backpack goes to the **stash** (30 slots).
+  **Die** and the loadout and backpack are lost; an empty loadout deploys with a free standard-issue Ion Carbine.
+- **Stash** (`Scripts/UI/BaseUI.cs`): LMB a weapon to equip / unequip it, RMB any item to sell it, or sell all resources.
+- **Quartermaster**: buy weapons (1.5x their value) and suit upgrades - Suit plating (+20 health per level, 3 levels),
+  Shield emitter (+15 shield, 3), Grenade rig (+1 charge, 2). Upgrades apply when the next raid starts.
+- The smoke test runs with its own profile file, and `-zcomBase` scripts loot -> extraction -> base -> shopping ->
+  redeploy with captures.
+
 ## Raid loop, enemies and outpost (v3)
 
 - **Extraction**: an evac beacon (sky beam, north edge) - stand on the pad for 8 s to extract with your backpack; starting the

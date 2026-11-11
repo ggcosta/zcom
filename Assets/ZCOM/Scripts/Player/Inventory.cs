@@ -33,7 +33,8 @@ namespace Zcom
             owner = GetComponent<PlayerController>();
             Backpack = new ItemContainer("BACKPACK", backpackSize);
             WeaponSlots = new ItemContainer("LOADOUT", weaponSlotCount, Items.IsWeapon);
-            foreach (var k in startingWeapons) WeaponSlots.Add(new ItemStack(Items.ForWeapon(k), 1));
+            // the loadout comes from the base (Profile); an empty one deploys with a standard-issue carbine
+            Profile.FillLoadout(WeaponSlots);
         }
 
         // ------------------------------------------------------------------ queries

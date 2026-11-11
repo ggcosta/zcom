@@ -208,6 +208,7 @@ namespace Zcom
             gameObject.AddComponent<InventoryUI>().Init(root, UiKit.Bold);
             BuildGameOver();
             gameObject.AddComponent<RaidUI>().Init(root);
+            gameObject.AddComponent<BaseUI>().Init(root);
             if (!UiStyle.Kit) BuildBoot();
         }
 
@@ -263,7 +264,7 @@ namespace Zcom
                 UiKit.Img("Major" + i, p, UiKit.White, A(Cyan, 0.55f), new Vector2(0, 0), new Vector2(0.5f, 0.5f), new Vector2(bx + i * bw / 4f, 98), new Vector2(1.5f, 10));
             UiKit.Img("Rule", p, UiKit.FadeLine, A(Cyan, 0.3f), new Vector2(0, 0), new Vector2(0, 0.5f), new Vector2(x0, 82), new Vector2(VitalsW - x0 - 24, 1.5f));
 
-            grenade = MakeSkill(p, "Grenade", new Vector2(x0, 20), "icon_grenade", "G", 2);
+            grenade = MakeSkill(p, "Grenade", new Vector2(x0, 20), "icon_grenade", "G", 4);
             dash = MakeSkill(p, "Dash", new Vector2(x0 + 166, 20), "icon_dash", "SPACE", 0);
             scanSkill = MakeSkill(p, "Scan", new Vector2(x0 + 332, 20), "icon_scan", "Q", 0);
         }
@@ -643,7 +644,7 @@ namespace Zcom
             startT += dt;
             var player = PlayerController.I;
             var cam = CameraRig.I ? CameraRig.I.Cam : Camera.main;
-            bool uiOpen = player && player.inventory && player.inventory.PanelOpen;
+            bool uiOpen = (player && player.inventory && player.inventory.PanelOpen) || (BaseUI.I && BaseUI.I.IsOpen);
 
             // F6: flip between the two UI designs (the choice is saved) and restart the raid to rebuild everything
             if (Keyboard.current != null && Keyboard.current.f6Key.wasPressedThisFrame && GameManager.I)
@@ -806,7 +807,10 @@ namespace Zcom
                 float r = gr.Charges >= gr.maxCharges ? 1f : gr.RechargeProgress;
                 Apply(grenade, gr.Charges > 0 ? 1f : r, gr.Charges > 0, gr.IsAiming, UiKit.Amber);
                 for (int i = 0; i < grenade.pips.Length; i++)
+                {
+                    grenade.pips[i].enabled = i < gr.maxCharges;
                     grenade.pips[i].color = i < gr.Charges ? UiKit.Amber : new Color(1, 1, 1, 0.15f);
+                }
             }
             Apply(dash, 1f - player.DashCooldown01, player.DashCooldown01 <= 0f, player.IsDashing, Cyan);
             var sp = player.GetComponent<ScanPulse>();
