@@ -9,7 +9,7 @@ namespace Zcom
     public static class ItemIcons
     {
         const int Layer = 31;
-        const int Size = 192;
+        const int Size = 288;
         static readonly Vector3 StagePos = new Vector3(0f, -2000f, 0f);
         static readonly Color Key = new Color(1f, 0f, 1f, 1f);
 
@@ -55,6 +55,18 @@ namespace Zcom
             key.color = new Color(0.9f, 0.95f, 1f);
             key.shadows = LightShadows.None;
             key.transform.rotation = Quaternion.Euler(35f, 25f, 0f);
+            // cool rim from behind and a soft fill from below so the silhouettes read on dark slots
+            foreach (var (rot, col, inten) in new[] { (Quaternion.Euler(-20f, 200f, 0f), new Color(0.45f, 0.8f, 1f), 1.1f), (Quaternion.Euler(-50f, -40f, 0f), new Color(1f, 0.9f, 0.8f), 0.45f) })
+            {
+                var l = new GameObject("IconFillLight").AddComponent<Light>();
+                Object.DontDestroyOnLoad(l.gameObject);
+                l.type = LightType.Directional;
+                l.cullingMask = 1 << Layer;
+                l.intensity = inten;
+                l.color = col;
+                l.shadows = LightShadows.None;
+                l.transform.rotation = rot;
+            }
         }
 
         static Sprite Render(ItemId id)
@@ -94,17 +106,22 @@ namespace Zcom
 
             // Chroma-key the background out.
             var px = tex.GetPixels32();
+            int x0 = w, y0 = h, x1 = -1, y1 = -1;
             for (int i = 0; i < px.Length; i++)
             {
                 var p = px[i];
-                if (p.r > 200 && p.g < 60 && p.b > 200) px[i] = new Color32(0, 0, 0, 0);
+                if (p.r > 200 && p.g < 60 && p.b > 200) { px[i] = new Color32(0, 0, 0, 0); continue; }
+                int x = i % w, y = i / w;
+                if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
             }
             tex.SetPixels32(px);
             tex.Apply(false, true);
+            // the sprite is the drawn object only (the model's bounds include invisible helpers), so it fills its slot
+            Rect content = x1 >= x0 ? new Rect(Mathf.Max(0, x0 - 2), Mathf.Max(0, y0 - 2), Mathf.Min(w, x1 + 3) - Mathf.Max(0, x0 - 2), Mathf.Min(h, y1 + 3) - Mathf.Max(0, y0 - 2)) : new Rect(0, 0, w, h);
 
             subject.gameObject.SetActive(false);
             Object.Destroy(subject.gameObject);
-            return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 100f);
+            return Sprite.Create(tex, content, new Vector2(0.5f, 0.5f), 100f);
         }
     }
 }

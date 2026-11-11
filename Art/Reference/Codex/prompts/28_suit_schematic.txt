@@ -1,0 +1,11 @@
+Use your built-in image_gen tool (the imagegen skill in its default built-in mode). Do NOT use the CLI fallback script and do not write any code. After generating, copy the final image into the current working directory with the exact filename given below, then reply with just that filename. Do not modify or create any other files.
+
+Attached Image 1 is the model sheet of the "Orbital Marshal", the armoured space marine of our isometric sci-fi extraction shooter.
+
+Task: generate ONE new image: a HUD asset, the holographic SUIT STATUS SCHEMATIC of this marine, to be used as a sprite in the vitals cluster of a helmet-visor HUD.
+- The full figure of the Orbital Marshal standing straight, strict FRONT view, arms slightly away from the body, feet together, perfectly centred and symmetrical, filling about 90% of the image height.
+- Drawn as clean technical LINE ART only: thin crisp glowing lines tracing the armour plates (helmet, chest, shoulder pads, forearms, belt, thigh and shin plates, boots), like a wireframe / blueprint readout. A very faint inner fill on the plates is fine. No shading, no face, no weapon, no cape.
+- Pure WHITE lines on a pure BLACK background (#000000). It will be tinted in the engine, so no colour at all and no gradients in the background.
+- No text, no frame, no UI, no ground, no watermark.
+- Portrait orientation, 2:3 aspect ratio.
+Filename: hud_suit_schematic.png

@@ -72,7 +72,7 @@ namespace Zcom
 
         void Build()
         {
-            Portrait = RT(512, 512);
+            Portrait = RT(768, 768);
             WeaponTex = RT(768, 320);
             Body = RT(768, 1152);
 
@@ -92,6 +92,7 @@ namespace Zcom
             Light("WRim", WeaponSpot + new Vector3(-0.8f, 0.6f, -1.0f), new Color(0.5f, 0.8f, 1f), 6f, 5f);
 
             portraitCam = MakeCam("PortraitCam", Portrait, 22f);
+            portraitCam.enabled = false;      // no HUD shows the helmet portrait any more; kept for future use
             bodyCam = MakeCam("BodyCam", Body, 28f);
             weaponCam = MakeCam("WeaponCam", WeaponTex, 20f);
             weaponCam.orthographic = true;
@@ -169,8 +170,9 @@ namespace Zcom
             // portrait: helmet 3/4 from the front-right, independent of the turntable yaw
             Vector3 face = Quaternion.Euler(0f, bodyYaw, 0f) * Vector3.forward;
             Vector3 camDir = Quaternion.Euler(0f, -28f, 0f) * face;
-            portraitCam.transform.position = h + camDir * 1.35f + Vector3.up * 0.06f;
-            portraitCam.transform.LookAt(h - Vector3.up * 0.06f);
+            // bust shot (helmet + shoulders): far enough that the helmet reads as a shape, not as a wall of facets
+            portraitCam.transform.position = h + camDir * 2.5f + Vector3.up * 0.12f;
+            portraitCam.transform.LookAt(h - Vector3.up * 0.2f);
             // full body
             bodyCam.transform.position = Origin + new Vector3(0f, 1.1f, 0f) + Quaternion.Euler(0f, 200f, 0f) * Vector3.forward * 4.5f;
             bodyCam.transform.LookAt(Origin + new Vector3(0f, 0.97f, 0f));

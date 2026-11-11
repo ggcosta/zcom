@@ -245,6 +245,16 @@ namespace Zcom
             Add("portal", Clip("portal", Portal()));
             Add("wave", Clip("wave", Alarm(), 0.7f));
             Add("clear", Clip("clear", Arp(new[] { 523f, 659f, 784f, 1046f }, 0.14f), 0.7f));
+            // interface
+            Add("ui_open", Clip("ui_open", Sweep(0.18f, 520f, 1500f), 0.4f));
+            Add("ui_close", Clip("ui_close", Sweep(0.13f, 1300f, 480f), 0.35f));
+            Add("ui_hover", Clip("ui_hover", Tone(0.035f, 2500f, 0.002f), 0.22f));
+            Add("ui_pick", Clip("ui_pick", Click(0.07f, 1500f, -1f), 0.45f));
+            Add("ui_drop", Clip("ui_drop", Click(0.11f, 880f, 0.035f), 0.5f));
+            Add("ui_deny", Clip("ui_deny", Arp(new[] { 233f, 175f }, 0.07f), 0.4f));
+            Add("ui_scan", Clip("ui_scan", Sweep(0.22f, 900f, 2400f), 0.3f));
+            Add("ui_reveal", Clip("ui_reveal", Arp(new[] { 1320f, 1760f }, 0.04f), 0.35f));
+            Add("ui_equip", Clip("ui_equip", Click(0.15f, 1150f, 0.05f), 0.55f));
             LoadRecorded();
         }
 

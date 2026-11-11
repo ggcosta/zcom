@@ -1,0 +1,18 @@
+Use your built-in image_gen tool (the imagegen skill in its default built-in mode). Do NOT use the CLI fallback script and do not write any code. After generating, copy the final image into the current working directory with the exact filename given below, then reply with just that filename. Do not modify or create any other files.
+
+Attached Image 1 is a screenshot of our current in-game HUD (design A, "tac-link visor") for an isometric sci-fi extraction shooter made in Unity: top-down isometric camera (about 50 degrees pitch) over a dark lunar mining outpost at night, an armoured space marine (the "Orbital Marshal") in the centre fighting insect-like aliens with an energy carbine. The current HUD works but looks like programmer art: generic cyan boxes, weak typography, cheap icons, an ugly 3D portrait.
+
+Task: generate ONE new image: a shipped-AAA-quality in-game HUD MOCKUP (a 16:9 gameplay screenshot, same scene and camera as Image 1) that keeps the SAME concept and layout logic as Image 1 but pushes the art direction and finish to the level of a premium AAA release (quality bar: Dead Space remake, Halo Infinite, Destiny 2, Helldivers 2). It will be the reference for re-implementing this HUD in Unity UI, so every element must be buildable from sprites, text, bars and masks.
+
+Concept to keep: the HUD is a hologram projected on the curved glass of the marine's helmet visor. Side clusters lean in perspective as if on curved glass. Cyan is the primary colour (#3FE0F0), warm amber (#F2B03A) for health and loot, red only for danger. Dark translucent glass, thin precise linework, restrained glow.
+
+Elements (keep these positions):
+- Bottom-left vitals cluster: NO face portrait. Instead a small holographic line-art schematic of the marine's armoured suit (front view, cyan wireframe, like a suit-status readout) inside a slim frame; next to it the callsign "ORBITAL MARSHAL", a thin segmented SHIELD bar (cyan) with the number 50, a thicker segmented HEALTH bar (amber) with a large number 100, a fine tick ruler under the bars, and three ability tiles (grenade with 2 charge pips, dash, scan pulse) with key labels G, SPACE, Q and a cooldown fill.
+- Bottom-right weapon cluster: a clean side-view render of the energy carbine, weapon name "ION CARBINE", fire mode caption, a large ammo count "24" with "/ 32", a row of 32 thin ammo ticks (8 spent), and three loadout tabs "1 2 3" above it with small weapon silhouettes, tab 1 active.
+- Top-centre: area name "KEPLER-7 OUTPOST" with thin wing lines and a tiny grid coordinate caption; under it a red alert plate "3 HOSTILES ENGAGED" with a warning triangle.
+- Top-right: objective plate "CLEAR XENO CAMPS 1/4" with four progress pips.
+- Around the marine's feet on the ground: a thin cyan ring with a segmented shield arc and a health arc.
+- Reticle at the mouse position: four ticks, a small ammo arc and the number 24. Slim red health bars over the aliens, floating amber damage numbers.
+
+Art direction: typography must look professionally set - a wide, confident display face for names and big numerals, a small crisp caption face for labels, consistent margins and a clear hierarchy; icons drawn as one coherent, refined family; subtle depth (soft inner glow, faint noise, fine bevel lines, a few tasteful micro details such as serial captions and corner ticks) without clutter; strong legibility over the dark scene; generous empty space in the middle of the screen. No watermark, no extra UI that is not listed.
+Filename: hud_a_visor_target.png

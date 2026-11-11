@@ -1,0 +1,17 @@
+Use your built-in image_gen tool (the imagegen skill in its default built-in mode). Do NOT use the CLI fallback script and do not write any code. After generating, copy the final image into the current working directory with the exact filename given below, then reply with just that filename. Do not modify or create any other files.
+
+Attached Image 1 is a screenshot of our current in-game INVENTORY screen (design A, "tac-link visor") for an isometric sci-fi extraction shooter made in Unity. It opens over the paused-looking game world (dark lunar mining outpost at night, blurred and dimmed behind the window). It works but looks like programmer art.
+
+Task: generate ONE new image: a shipped-AAA-quality INVENTORY SCREEN MOCKUP (16:9) that keeps the SAME concept, layout and functions as Image 1 but pushes the art direction and finish to the level of a premium AAA release (quality bar: Dead Space remake, Destiny 2, Escape from Tarkov, The Division 2). It will be the reference for re-implementing this screen in Unity UI, so every element must be buildable from sprites, text, bars and masks.
+
+Concept to keep: a hologram projected on the marine's helmet visor. Cyan primary (#3FE0F0), warm amber (#F2B03A) for the equipped weapon, credits and the crate, rarity colours for items (grey common, green uncommon, blue rare, magenta epic). Dark translucent glass panels, thin precise linework, restrained glow, the blurred world visible behind.
+
+Layout (three panels side by side, same as Image 1):
+- Left panel "OPERATIVE": the armoured marine standing on a round holographic pedestal with rotating rings; to the right three wide weapon slots numbered 1-3 (slot 1 "ION CARBINE" with the tag EQUIPPED and "13 DMG", slot 2 "NOVA SCATTER", slot 3 "EMPTY SLOT"), thin leader lines connecting the marine to the slots; below them a small BIOMETRICS block with HP 100/100, SHD 50 and two grenade pips.
+- Middle panel "BACKPACK": a 6 x 4 grid of square slots with one cut corner; a few items in the first row (grey stone x6, gold nuggets x10, a green glowing xenite crystal x2, an energy shotgun), each with a rarity-coloured frame and inner glow, name caption and stack count; empty slots subtly hatched; a footer with a MASS bar "21.1 / 40 kg" and "VALUE 2 338 cr" in amber; top right "SLOTS 5 / 24".
+- Right panel "SUPPLY CRATE" in amber: a 3 x 3 grid where the first three items are revealed and the other six slots show a SCAN animation (hatching, a scan line and the word SCAN), a caption "SCANNING...", and a wide "TAKE ALL" button with the key F.
+- A floating tooltip card next to a hovered weapon: icon, name "NOVA SCATTER", rarity pill RARE, one line of description, five stat rows (DAMAGE, FIRE RATE, DPS, RANGE, CELL) as bars with a marker for the equipped weapon and green/red difference numbers, then MASS and VALUE.
+- A slim hint bar at the bottom: LMB DRAG / SHIFT SPLIT / RMB QUICK MOVE / DRAG OUT DROP / CLICK EQUIP / F TAKE ALL / TAB CLOSE.
+
+Art direction: typography professionally set (a wide display face for panel titles and numerals, a crisp small caption face), consistent margins and a clear hierarchy; item icons as high quality rendered objects, one coherent style; subtle depth (soft inner glow, faint hex pattern, fine bevel lines, corner ticks) without clutter; premium, calm, readable. No watermark.
+Filename: inventory_a_visor_target.png

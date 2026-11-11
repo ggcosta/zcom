@@ -1,0 +1,19 @@
+Use your built-in image_gen tool (the imagegen skill in its default built-in mode). Do NOT use the CLI fallback script and do not write any code. After generating, copy the final image into the current working directory with the exact filename given below, then reply with just that filename. Do not modify or create any other files.
+
+Attached Image 1 is the target mockup of our game's holographic helmet-visor HUD (isometric sci-fi extraction shooter). Look at its ability icons (grenade, dash, scan) - we need the final icon family in that exact refined style.
+
+Task: generate ONE image: an ICON SHEET for this HUD with EIGHT icons arranged in a strict 4 columns x 2 rows grid. The image must be exactly 2:1 landscape. Each icon sits perfectly centred in its own square cell, fills about 70% of the cell, and never touches or crosses a cell border. Wide empty margins between icons.
+
+Row 1, left to right:
+1. plasma grenade (round body with a band, cap and pin ring)
+2. dash (three chevrons pointing right with two short speed lines)
+3. scan pulse (small radar dish emitting three curved waves)
+4. shield (heraldic shield outline with a small inner chevron)
+Row 2, left to right:
+5. vital signs (a heartbeat / ECG line)
+6. mass (a kettlebell-style weight)
+7. credits (a hexagonal credit chip with a small stack behind it)
+8. supply crate (isometric cube crate with a latch)
+
+Style: one coherent family - clean geometric line icons with a consistent medium stroke weight, slightly rounded joins, a few small solid-filled accents, like premium AAA sci-fi UI pictograms. Pure WHITE artwork on a pure BLACK background (#000000): no colour, no glow, no gradients, no shadows, no grid lines, no borders, no numbers, no text, no watermark.
+Filename: hud_a_icons.png

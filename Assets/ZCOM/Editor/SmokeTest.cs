@@ -20,6 +20,7 @@ namespace Zcom.EditorTools
         const string KeyPassive = "zcom_smoke_passive";
         const string KeyShowcase = "zcom_smoke_showcase";
         const string KeyTour = "zcom_smoke_tour";
+        const string KeyUi = "zcom_smoke_ui";       // "A" = tac-link, "B" = field kit, "" = the saved preference
         static int tourIndex;
         static float lineupShotAt = -1f, runShotAt = -1f;
         static int actStage = -1; static float actAt;
@@ -148,6 +149,10 @@ namespace Zcom.EditorTools
         static SmokeTest()
         {
             if (!SessionState.GetBool(KeyActive, false)) return;
+            InventoryUI.FocusBlur = false;      // captures render to a texture, where the blur would also hit the UI
+            string ui = SessionState.GetString(KeyUi, "");
+            if (ui == "A") UiStyle.Override = UiDesign.TacLink;
+            else if (ui == "B") UiStyle.Override = UiDesign.FieldKit;
             EditorApplication.update -= Tick;
             EditorApplication.update += Tick;
             Application.logMessageReceived -= OnLog;
@@ -172,6 +177,7 @@ namespace Zcom.EditorTools
             {
                 if (args[i] == "-zcomOut") outDir = args[i + 1];
                 if (args[i] == "-zcomDuration") float.TryParse(args[i + 1], out duration);
+                if (args[i] == "-zcomUi") SessionState.SetString(KeyUi, args[i + 1]);
             }
             SessionState.SetBool(KeyPassive, System.Array.IndexOf(args, "-zcomPassive") >= 0);
             SessionState.SetBool(KeyShowcase, System.Array.IndexOf(args, "-zcomShowcase") >= 0);
@@ -335,7 +341,33 @@ namespace Zcom.EditorTools
                         if (al && al.TryGetComponent<UnityEngine.AI.NavMeshAgent>(out var ag) && ag.isOnNavMesh) ag.SetDestination(al.transform.position + new Vector3(4f, 0f, 0f));
             }
             else if (stop == tourIndex - 1 && local > 2.0f && local - Time.unscaledDeltaTime <= 2.0f)
+            {
                 Capture(TourStops[stop].name);
+                if (TourStops[stop].name == "tour_landing") CaptureProps();
+            }
+        }
+
+        /// <summary>One close-up per environment prop (first instance of each), from the game camera's direction.</summary>
+        static void CaptureProps()
+        {
+            var cam = CameraRig.I ? CameraRig.I.Cam : null;
+            if (!cam) return;
+            Vector3 view = cam.transform.forward;
+            var seen = new System.Collections.Generic.HashSet<string>();
+            foreach (var mf in Object.FindObjectsByType<MeshFilter>(FindObjectsSortMode.InstanceID))
+            {
+                var root = mf.transform;
+                while (root.parent && !root.name.StartsWith("Prop_")) root = root.parent;
+                string n = root.name.Replace("(Clone)", "").Trim();
+                if (!n.StartsWith("Prop_") || !seen.Add(n)) continue;
+                var rs = root.GetComponentsInChildren<Renderer>();
+                if (rs.Length == 0) continue;
+                Bounds b = rs[0].bounds;
+                foreach (var r in rs) b.Encapsulate(r.bounds);
+                float d = b.extents.magnitude * 3.2f;
+                Vector3 dir = Vector3.Slerp(view, Vector3.ProjectOnPlane(view, Vector3.up).normalized, 0.35f).normalized;
+                CaptureFrom("prop_" + n.Substring(5), b.center - dir * d, b.center);
+            }
         }
 
         // ------------------------------------------------------------------ weapon showcase (-zcomShowcase)
@@ -655,14 +687,33 @@ namespace Zcom.EditorTools
             var target = cam.targetTexture;
             bool temp = target == null;
             if (temp) { target = new RenderTexture(1600, 900, 24); cam.targetTexture = target; }
+            // "_ui" twin without post-processing: in these texture captures the overlay UI goes through bloom / grain /
+            // SMAA, which it does not on screen, so this is the honest view of the interface
+            if (name.Contains("combat") || name.Contains("inventory") || name.Contains("crate") || name.Contains("start"))
+            {
+                var cd = UnityEngine.Rendering.Universal.CameraExtensions.GetUniversalAdditionalCameraData(cam);
+                bool pp = cd.renderPostProcessing;
+                var aa = cd.antialiasing;
+                cd.renderPostProcessing = false;
+                cd.antialiasing = UnityEngine.Rendering.Universal.AntialiasingMode.None;
+                cam.Render();
+                SaveTarget(target, name + "_ui");
+                cd.renderPostProcessing = pp;
+                cd.antialiasing = aa;
+            }
             cam.Render();
+            SaveTarget(target, name);
+            if (temp) { cam.targetTexture = null; Object.DestroyImmediate(target); }
+        }
+
+        static void SaveTarget(RenderTexture target, string name)
+        {
             var prev = RenderTexture.active;
             RenderTexture.active = target;
             var tex = new Texture2D(target.width, target.height, TextureFormat.RGB24, false);
             tex.ReadPixels(new Rect(0, 0, target.width, target.height), 0, 0);
             tex.Apply();
             RenderTexture.active = prev;
-            if (temp) { cam.targetTexture = null; Object.DestroyImmediate(target); }
             File.WriteAllBytes(Path.Combine(SessionState.GetString(KeyOut, "."), name + ".png"), tex.EncodeToPNG());
             Object.DestroyImmediate(tex);
         }

@@ -24,6 +24,14 @@ namespace Zcom
         public static Font Bold => bold ? bold : bold = Resources.Load<Font>("Fonts/Rajdhani-Bold") ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         public static Font Semi => semi ? semi : semi = Resources.Load<Font>("Fonts/Rajdhani-SemiBold") ?? Bold;
 
+        static readonly System.Collections.Generic.Dictionary<string, Font> fonts = new System.Collections.Generic.Dictionary<string, Font>();
+        /// <summary>Any font in Resources/Fonts by file name (falls back to Rajdhani Bold).</summary>
+        public static Font F(string name)
+        {
+            if (!fonts.TryGetValue(name, out var f) || !f) fonts[name] = f = Resources.Load<Font>("Fonts/" + name) ?? Bold;
+            return f;
+        }
+
         // ------------------------------------------------------------------ sprites
         static Sprite panelFill, panelFrame, bracket, skew, glow, circle, ring, diamond, roundFill, roundFrame, line, grenadeIcon, dashIcon, white;
 
@@ -32,6 +40,7 @@ namespace Zcom
         {
             panelFill = panelFrame = bracket = skew = glow = circle = ring = diamond = roundFill = roundFrame = line = grenadeIcon = dashIcon = white = null;
             bold = semi = null;
+            fonts.Clear();
         }
 
         delegate float AlphaFn(float x, float y);
