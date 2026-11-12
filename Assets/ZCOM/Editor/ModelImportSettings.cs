@@ -35,6 +35,22 @@ namespace Zcom.EditorTools
         }
     }
 
+    /// <summary>Music in Resources/Music streams from disk instead of being decoded into memory on load.</summary>
+    public class MusicImportSettings : AssetPostprocessor
+    {
+        void OnPreprocessAudio()
+        {
+            if (!assetPath.Replace('\\', '/').Contains("ZCOM/Resources/Music/")) return;
+            var a = (AudioImporter)assetImporter;
+            var s = a.defaultSampleSettings;
+            s.loadType = AudioClipLoadType.Streaming;
+            s.compressionFormat = AudioCompressionFormat.Vorbis;
+            s.quality = 0.7f;
+            a.defaultSampleSettings = s;
+            a.loadInBackground = true;
+        }
+    }
+
     /// <summary>UI art in Resources/UI (Codex-generated icons, portraits) imports as high-quality sprites.</summary>
     public class UiTextureImportSettings : AssetPostprocessor
     {

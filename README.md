@@ -102,6 +102,12 @@ If the scene is missing or you change a factory script, rebuild it from the menu
 - **Outpost**: modular hab kit (`Tools/Blender/zcom_habkit.py`, concept `env_hab.png`) - wall / window panels, ribs, corner
   pillars, airlock door frames with steps, roof tiles, vents, pipes, dishes, beacons, lamp posts and walkway grates;
   `MapBuilder.House` assembles buildings from it (gameplay colliders stay simple boxes).
+- **Music** (CC0, SRG774 *Dark Sci-Fi Audio Pack*, `Resources/Music`): an exploration loop crossfades into a combat loop
+  while hostiles are engaged or the evac countdown runs, plus a stinger on extraction (`Fx/AmbientAudio.cs`).
+  Interface sounds and the Ion Carbine / Nova Scatter shots are now Kenney CC0 recordings (`Resources/Audio/CREDITS.md`).
+- **Rocks**: boulder, slab, spire and cliff are photoscanned lunar rocks from Poly Haven (CC0,
+  `Art/Reference/Codex/env3d/polyhaven`), baked by `zcom_props.py` like the TRELLIS props (spec keys `rot`,
+  `stretch`, `albedo_lum`).
 - **Atmosphere**: moon-wind ambience + a combat tension layer that swells with engaged hostiles (`Fx/AmbientAudio.cs`),
   drifting dust motes (`Fx/AmbientDust.cs`).
 - `SmokeTest -zcomTour` now also lines up the three aliens and runs an extraction.

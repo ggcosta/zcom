@@ -49,11 +49,24 @@ namespace Zcom
             return bank.TryGetValue(id, out var c) ? c[0] : null;
         }
 
+        /// <summary>
+        /// Level trims for recordings that replace a synthesised id: the synth clips are mastered at lower peaks (see
+        /// their Add() calls), while recordings arrive at -1 dBFS, so without a trim they would jump out of the mix.
+        /// </summary>
+        static readonly Dictionary<string, float> RecordedTrim = new Dictionary<string, float>
+        {
+            { "ui_open", 0.45f }, { "ui_close", 0.4f }, { "ui_hover", 0.25f }, { "ui_pick", 0.5f }, { "ui_drop", 0.55f },
+            { "ui_deny", 0.45f }, { "ui_scan", 0.35f }, { "ui_reveal", 0.4f }, { "ui_equip", 0.6f },
+            { "ion", 0.6f }, { "nova", 0.8f },
+        };
+        static readonly HashSet<string> recordedIds = new HashSet<string>();
+
         public static void Play(string id, float volume = 1f, float pitchVariance = 0.05f, float pitch = 1f)
         {
             var p = I;
             if (p.voices == null || bank == null) return;
             if (!bank.TryGetValue(id, out var clips)) return;
+            if (recordedIds.Contains(id) && RecordedTrim.TryGetValue(id, out var trim)) volume *= trim;
             AudioSource s = null;
             for (int i = 0; i < p.voices.Length; i++)
             {
@@ -281,6 +294,7 @@ namespace Zcom
             {
                 kv.Value.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
                 bank[kv.Key] = kv.Value.ToArray();
+                recordedIds.Add(kv.Key);
             }
         }
 

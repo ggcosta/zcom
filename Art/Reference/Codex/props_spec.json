@@ -18,76 +18,118 @@
  },
  {
   "name": "RockBoulder",
-  "glb": "env3d/rock_boulder.glb",
   "concept": "env3d/rock_boulder.png",
+  "mode": "trellis",
+  "tile": "rock",
+  "tile_scale": 0.5,
+  "tile_mix": 0.12,
+  "metal": 0.0,
+  "smooth_max": 0.35,
+  "emit_lights": false,
+  "dust": 0.45,
+  "tint": [
+   0.95,
+   0.88,
+   1.03
+  ],
+  "glb": "env3d/polyhaven/moon_rock_02/moon_rock_02_1k.gltf",
   "size": 3.2,
   "axis": "height",
   "tris": 5000,
-  "mode": "tile",
-  "tile": "rock",
-  "tile_scale": 0.5,
-  "dust": 0.55,
+  "tex": 1024,
+  "yaw": 90,
   "ao_dist": 0.6,
-  "tint": [
-   0.95,
-   0.86,
-   1.05
-  ]
+  "albedo_lum": 0.085
  },
  {
   "name": "RockSpire",
-  "glb": "env3d/rock_spire.glb",
   "concept": "env3d/rock_spire.png",
+  "mode": "trellis",
+  "tile": "rock",
+  "tile_scale": 0.5,
+  "tile_mix": 0.12,
+  "metal": 0.0,
+  "smooth_max": 0.35,
+  "emit_lights": false,
+  "dust": 0.45,
+  "tint": [
+   0.95,
+   0.88,
+   1.03
+  ],
+  "glb": "env3d/polyhaven/moon_rock_03/moon_rock_03_1k.gltf",
   "size": 7.5,
   "axis": "height",
   "tris": 5000,
-  "mode": "tile",
-  "tile": "rock",
-  "tile_scale": 0.4,
-  "dust": 0.55,
+  "tex": 1024,
+  "yaw": 90,
+  "rot": [
+   0,
+   90,
+   0
+  ],
+  "stretch": [
+   1,
+   1,
+   1.7
+  ],
   "ao_dist": 1.0,
-  "tint": [
-   0.95,
-   0.86,
-   1.05
-  ]
+  "albedo_lum": 0.085
  },
  {
   "name": "RockSlab",
-  "glb": "env3d/rock_slab.glb",
   "concept": "env3d/rock_slab.png",
+  "mode": "trellis",
+  "tile": "rock",
+  "tile_scale": 0.5,
+  "tile_mix": 0.12,
+  "metal": 0.0,
+  "smooth_max": 0.35,
+  "emit_lights": false,
+  "dust": 0.45,
+  "tint": [
+   0.95,
+   0.88,
+   1.03
+  ],
+  "glb": "env3d/polyhaven/moon_rock_04/moon_rock_04_1k.gltf",
   "size": 1.5,
   "axis": "height",
   "tris": 5000,
-  "mode": "tile",
-  "tile": "rock",
-  "tile_scale": 0.5,
-  "dust": 0.55,
+  "tex": 1024,
+  "yaw": 90,
   "ao_dist": 0.5,
-  "tint": [
-   0.95,
-   0.86,
-   1.05
-  ]
+  "albedo_lum": 0.085
  },
  {
   "name": "RockCliff",
-  "glb": "env3d/rock_cliff.glb",
   "concept": "env3d/rock_cliff.png",
+  "mode": "trellis",
+  "tile": "rock",
+  "tile_scale": 0.5,
+  "tile_mix": 0.12,
+  "metal": 0.0,
+  "smooth_max": 0.35,
+  "emit_lights": false,
+  "dust": 0.45,
+  "tint": [
+   0.95,
+   0.88,
+   1.03
+  ],
+  "glb": "env3d/polyhaven/moon_rock_07/moon_rock_07_1k.gltf",
   "size": 16,
   "axis": "length",
   "tris": 8000,
-  "mode": "tile",
-  "tile": "rock",
-  "tile_scale": 0.3,
-  "dust": 0.55,
-  "ao_dist": 1.5,
   "tex": 2048,
-  "tint": [
-   0.95,
-   0.86,
-   1.05
-  ]
+  "yaw": 90,
+  "stretch": [
+   1.6,
+   1,
+   1
+  ],
+  "ao_dist": 1.5,
+  "albedo_lum": 0.085
  },
  {
   "name": "DropPod",

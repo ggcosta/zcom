@@ -16,15 +16,24 @@ required. Credit is given anyway.
 | `chitin` | Impact Sounds — Kenney | `impactGeneric_light_000` – `_004` |
 | `step` | Impact Sounds — Kenney | `footstep_concrete_000` – `_004` |
 | `explosion` | Sci-Fi Sounds — Kenney | `explosionCrunch_000`, `_001`, `_003` |
+| `ion` (Ion Carbine shot) | Sci-Fi Sounds — Kenney | `laserSmall_000` – `_004` |
+| `nova` (Nova Scatter shot) | Sci-Fi Sounds — Kenney | `laserLarge_000` – `_004` |
+| `ui_open` / `ui_close` | Interface Sounds — Kenney | `maximize_001` – `_003` / `minimize_001` – `_003` |
+| `ui_hover` / `ui_pick` | Interface Sounds — Kenney | `tick_001`, `_002` / `select_001` – `_003` |
+| `ui_drop` / `ui_deny` | Interface Sounds — Kenney | `drop_001` – `_004` / `error_001` – `_003` |
+| `ui_scan` / `ui_reveal` | Interface Sounds — Kenney | `scroll_001`, `_002` / `confirmation_001` – `_003` |
+| `ui_equip` | Interface Sounds — Kenney | `switch_001` – `_003` |
 
 Sources:
 
 - Kenney, *Impact Sounds* — https://kenney.nl/assets/impact-sounds (CC0)
 - Kenney, *Sci-Fi Sounds* — https://kenney.nl/assets/sci-fi-sounds (CC0)
+- Kenney, *Interface Sounds* — https://kenney.nl/assets/interface-sounds (CC0)
 - rubberduck, *80 CC0 creature SFX* — https://opengameart.org/content/80-cc0-creature-sfx (CC0)
 - rubberduck, *80 CC0 creature SFX 2* — https://opengameart.org/content/80-cc0-creture-sfx-2 (CC0)
 
-Processing: silence trimmed, mono, 44.1 kHz, peak-normalised to −1 dBFS, Ogg Vorbis q6.
+Processing: silence trimmed, mono, 44.1 kHz, peak-normalised to −1 dBFS, Ogg Vorbis q6. Clips that replace a
+synthesised sound get a level trim in `ProcAudio.RecordedTrim` so they sit in the mix like the synth did.
 
 ## Replacing or adding a sound
 

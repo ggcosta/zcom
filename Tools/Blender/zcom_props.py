@@ -70,6 +70,15 @@ def co_array(o):
     return a.reshape(-1, 3)
 
 
+def orient(spec):
+    """Rotation / stretch applied to a textured model before normalising: "rot" [x, y, z] degrees, then "stretch"
+    [sx, sy, sz] (e.g. to turn a scanned rock into a spire), then the TRELLIS facing fix and "yaw"."""
+    r = spec.get("rot", [0, 0, 0])
+    m = Matrix.Rotation(math.radians(r[2]), 4, "Z") @ Matrix.Rotation(math.radians(r[1]), 4, "Y") @ Matrix.Rotation(math.radians(r[0]), 4, "X")
+    s = spec.get("stretch", [1, 1, 1])
+    return Matrix.Rotation(math.radians(-90 + spec.get("yaw", 0)), 4, "Z") @ Matrix.Diagonal((s[0], s[1], s[2], 1)) @ m
+
+
 def load(spec):
     """-> (sculpt, textured): textured is the untouched TRELLIS mesh (albedo source), None for other modes."""
     zm.reset()
@@ -83,7 +92,7 @@ def load(spec):
     hi.parent = None
     hi.matrix_world = Matrix.Identity(4)
     if spec.get("mode") == "trellis":   # TRELLIS faces +X; the concept's front should face -Y like the Hunyuan sculpts
-        hi.data.transform(Matrix.Rotation(math.radians(-90 + spec.get("yaw", 0)), 4, "Z"))
+        hi.data.transform(orient(spec))
     co = co_array(hi)
     mn, mx = co.min(0), co.max(0)
     ext = mx - mn
@@ -93,8 +102,7 @@ def load(spec):
     hi.data.transform(Matrix.Diagonal((s, s, s, 1)) @ Matrix.Translation(-shift))
     hi.data.update()
     # same normalisation for meshes made from the raw GLB (the MeshLab game mesh)
-    spec["_xf"] = Matrix.Diagonal((s, s, s, 1)) @ Matrix.Translation(-shift) @ \
-        Matrix.Rotation(math.radians(-90 + spec.get("yaw", 0)), 4, "Z")
+    spec["_xf"] = Matrix.Diagonal((s, s, s, 1)) @ Matrix.Translation(-shift) @ orient(spec)
     if spec.get("mode") != "trellis":
         hi.name = hi.data.name = "Sculpt"
         return hi, None
@@ -325,7 +333,8 @@ def bake(spec, hi, lo, size, tex=None):
         lin = np.clip(px[:, :3], 0, 1) ** 2.2
         lit = px[:, :3].max(1) > 0.02
         lum = float((lin[lit] @ np.array([0.2126, 0.7152, 0.0722])).mean()) if lit.any() else 1.0
-        g = float(np.clip(spec.get("albedo_lum", 0.075) / max(lum, 1e-4), 1.0, 3.0))
+        # TRELLIS albedos only ever get lifted; scans with an explicit "albedo_lum" may also be darkened
+        g = float(np.clip(spec.get("albedo_lum", 0.075) / max(lum, 1e-4), 0.25 if "albedo_lum" in spec else 1.0, 3.0))
         px[:, :3] = np.clip(px[:, :3] * g ** (1 / 2.2), 0, 1)
         src.pixels = px.ravel().tolist()
         print(f"[zcom] {spec['name']}: TRELLIS albedo luminance {lum:.3f}, gain {g:.2f}")
