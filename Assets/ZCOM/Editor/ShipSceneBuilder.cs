@@ -56,7 +56,7 @@ namespace Zcom.EditorTools
 
             var player = PlayerFactory.Build(ship.SpawnWorld);
             player.transform.rotation = ship.transform.rotation;
-            var cam = SliceBuilder.CreateCamera(player);
+            var cam = SliceBuilder.CreateCamera(player, 150f);     // short far plane: finer depth precision on the deck
             cam.backgroundColor = new Color(0.004f, 0.005f, 0.008f);
             cam.GetComponent<CameraRig>().distance = 18f;
             var gm = SliceBuilder.CreateSystems(player);

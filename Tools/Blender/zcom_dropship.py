@@ -406,7 +406,10 @@ def interior_big():
     D = DECK
     L = I_REAR - I_FRONT
     # ---------------- deck: side plates, grated centre channel, substructure
-    box((0, (I_NOSE + I_REAR) / 2, D - 0.25), (2 * IW + 0.4, I_REAR - I_NOSE + 0.3, 0.5), "frame", bevel=0.0)
+    # substructure: kept 7 cm under the plate tops and out of the grated channel (coplanar faces z-fight)
+    for s in (1, -1):
+        box((s * (0.84 + (IW + 0.2 - 0.84) / 2), (I_NOSE + I_REAR) / 2, D - 0.3), (IW + 0.2 - 0.84, I_REAR - I_NOSE + 0.3, 0.46), "frame", bevel=0.0)
+    box((0, (I_NOSE + I_FRONT) / 2, D - 0.3), (1.7, I_FRONT - I_NOSE, 0.46), "frame", bevel=0.0)
     y, k = I_FRONT, 0
     while y < I_REAR - 0.1:
         y1 = min(y + 2.2, I_REAR)
@@ -420,7 +423,7 @@ def interior_big():
                         for j in range(n):
                             px = cx - (x1 - x0 - 0.4) / 2 + (i + 0.5) * (x1 - x0 - 0.4) / n
                             py = y + 0.2 + (j + 0.5) * (y1 - y - 0.4) / n
-                            box((px, py, D + 0.004), (0.07, 0.016, 0.008), "deck", rot=(0, 0, 45 if (i + j) % 2 else -45), bevel=0.0)
+                            box((px, py, D + 0.005), (0.07, 0.016, 0.01), "deck", rot=(0, 0, 45 if (i + j) % 2 else -45), bevel=0.0)
             cyl((s * (IW - 0.3), y + 0.3, D + 0.004), 0.06, 0.012, "steel", verts=12, bevel=0.002)
         y = y1
         k += 1
@@ -432,12 +435,12 @@ def interior_big():
         box((0, yy, D - 0.32), (0.6, 0.14, 0.02), "cyan", bevel=0.002)
         yy += 2.2
     for s in (1, -1):
-        box((s * 0.8, (I_FRONT + I_REAR) / 2, D - 0.03), (0.06, L, 0.06), "frame", bevel=0.005)
+        box((s * 0.8, (I_FRONT + I_REAR) / 2, D - 0.035), (0.06, L, 0.06), "frame", bevel=0.005)
     n = int(L / 0.075)
     for i in range(n):
-        box((0, I_FRONT + 0.04 + i * 0.075, D - 0.025), (1.58, 0.02, 0.05), "steel", bevel=0.0)
+        box((0, I_FRONT + 0.04 + i * 0.075, D - 0.04), (1.5, 0.02, 0.05), "steel", bevel=0.0)
     for x in (-0.4, 0.4):
-        box((x, (I_FRONT + I_REAR) / 2, D - 0.035), (0.03, L, 0.04), "steel", bevel=0.0)
+        box((x, (I_FRONT + I_REAR) / 2, D - 0.055), (0.03, L, 0.04), "steel", bevel=0.0)
 
     # ---------------- outer walls: lining with ribs, slanted ceiling, ceiling spine with lamps
     ribs = [I_FRONT + 0.2 + i * 2.2 for i in range(int(L / 2.2) + 1) if I_FRONT + 0.2 + i * 2.2 < I_REAR - 0.2]
@@ -512,7 +515,7 @@ def interior_big():
         box((s * 0.7, y - 0.2, D + 1.15), (0.08, 0.06, 0.45), "steel", bevel=0.01)
     box((0, y - 0.12, 4.32), (6.8, 0.4, 0.16), "frame", bevel=0.03)
     text("EXIT  TO  SURFACE", (0, y - 0.33, 4.55), 0.18, "amber", depth=0.002)
-    box((0, y - 0.45, D + 0.003), (6.6, 0.6, 0.008), "hazard", bevel=0.0)
+    box((0, y - 0.45, D + 0.012), (6.6, 0.6, 0.008), "hazard", bevel=0.0)
     box((-3.95, y - 0.3, D + 1.3), (0.4, 0.14, 0.6), "frame", bevel=0.02)
     box((-3.95, y - 0.38, D + 1.4), (0.3, 0.01, 0.3), "screen", bevel=0.003)
     for kk, kd in enumerate(("green", "amber", "red")):
@@ -598,9 +601,9 @@ def interior_big():
     # ---------------- mid bay: open floor with marked bays for future workstations, wall racks
     for i, (bx, by) in enumerate(((-3.0, -2.0), (-3.0, 2.0), (3.0, -2.0), (3.0, 2.0))):
         for s in (1, -1):
-            box((bx + s * 1.1, by, D + 0.004), (0.08, 2.4, 0.008), "hazard", bevel=0.0)
-            box((bx, by + s * 1.2, D + 0.004), (2.28, 0.08, 0.008), "hazard", bevel=0.0)
-        text(f"BAY {'ABCD'[i]}", (bx, by, D + 0.009), 0.3, "stencil", rot=(0, 0, 90 if bx < 0 else -90), depth=0.002)
+            box((bx + s * 1.1, by, D + 0.01), (0.08, 2.4, 0.008), "hazard", bevel=0.0)
+            box((bx, by + s * 1.2, D + 0.01), (2.28, 0.08, 0.008), "hazard", bevel=0.0)
+        text(f"BAY {'ABCD'[i]}", (bx, by, D + 0.017), 0.3, "stencil", rot=(0, 0, 90 if bx < 0 else -90), depth=0.002)
     for s in (1, -1):
         x = s * (IW - 0.2)
         for yy in (-2.0, 2.0):
@@ -610,7 +613,7 @@ def interior_big():
                 box((x - s * 0.15, yy, D + 1.05 + r * 0.5), (0.22, 2.0, 0.04), "steel", bevel=0.004)
             box((x - s * 0.22, yy - 0.5, D + 1.2), (0.25, 0.5, 0.25), "trim", bevel=0.02)
             box((x - s * 0.22, yy + 0.4, D + 1.7), (0.25, 0.7, 0.2), "paint", bevel=0.02)
-    text("MID BAY", (0.0, 0.0, D + 0.009), 0.4, "stencil", rot=(0, 0, 90), depth=0.002)
+    text("MID BAY", (0.0, 0.0, D + 0.017), 0.4, "stencil", rot=(0, 0, 90), depth=0.002)
 
     # ---------------- cargo hold: jump seats, stowage, markings
     jump_seats(1, 5.4, 12)
@@ -619,8 +622,8 @@ def interior_big():
         box((-(IW - 0.25), yy, D + 2.0), (0.4, 1.3, 0.06), "frame", bevel=0.01)
         box((-(IW - 0.25), yy - 0.35, D + 2.15), (0.32, 0.45, 0.24), "trim", bevel=0.02)
         box((-(IW - 0.25), yy + 0.3, D + 2.15), (0.32, 0.5, 0.24), "paint", bevel=0.02)
-    text("CARGO HOLD", (2.6, 9.0, D + 0.009), 0.34, "stencil", rot=(0, 0, 90), depth=0.002)
-    text("EXIT", (0.0, I_REAR - 1.4, D + 0.009), 0.4, "stencil", rot=(0, 0, 180), depth=0.002)
+    text("CARGO HOLD", (2.6, 9.0, D + 0.017), 0.34, "stencil", rot=(0, 0, 90), depth=0.002)
+    text("EXIT", (0.0, I_REAR - 1.4, D + 0.017), 0.4, "stencil", rot=(0, 0, 180), depth=0.002)
 
 
 def cockpit():

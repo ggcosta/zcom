@@ -379,6 +379,7 @@ namespace Zcom.EditorTools
                 CaptureFrom("ship_hold_close", ShipPoint(-2f, 7f, -1f), ShipPoint(0f, 2f, -10f));
                 CaptureFrom("ship_flightdeck", ShipPoint(-2.5f, 6.5f, 10.5f), ShipPoint(0f, 2f, 15.5f));
                 CaptureFrom("ship_midbay", ShipPoint(-6f, 9f, -5f), ShipPoint(0f, 1.7f, 0.5f));
+                CaptureFrom("ship_floor_close", ShipPoint(-2.5f, 5.2f, -5.5f), ShipPoint(0.3f, 1.7f, -9.5f));
                 ShipNext();
             }
             if (shipStage == 6 && gm && !gm.hub && shipStageT > 1.5f && shipStageT - Time.unscaledDeltaTime <= 1.5f && inv)
