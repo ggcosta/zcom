@@ -12,6 +12,8 @@ namespace Zcom
         public int backpackSize = 24;
         public int weaponSlotCount = 3;
         public List<WeaponKind> startingWeapons = new List<WeaponKind> { WeaponKind.IonCarbine };
+        [Tooltip("Load the loadout + backpack from the saved profile (what the operative carried out of the ship) instead of the starting weapons.")]
+        public bool persistent = true;
         [Tooltip("A looted crate's window closes when you walk this far away.")]
         public float containerRange = 3.5f;
 
@@ -33,7 +35,8 @@ namespace Zcom
             owner = GetComponent<PlayerController>();
             Backpack = new ItemContainer("BACKPACK", backpackSize);
             WeaponSlots = new ItemContainer("LOADOUT", weaponSlotCount, Items.IsWeapon);
-            foreach (var k in startingWeapons) WeaponSlots.Add(new ItemStack(Items.ForWeapon(k), 1));
+            if (persistent) Profile.LoadCarry(this);
+            else foreach (var k in startingWeapons) WeaponSlots.Add(new ItemStack(Items.ForWeapon(k), 1));
         }
 
         // ------------------------------------------------------------------ queries
@@ -132,7 +135,7 @@ namespace Zcom
                 Vector3 d = openContainerAnchor.position - transform.position; d.y = 0f;
                 if (d.magnitude > containerRange) ClosePanel();
             }
-            if (PanelOpen && OpenContainer != null && input.takeAll) TakeAll();
+            if (PanelOpen && OpenContainer != null && !OpenContainer.isStash && input.takeAll) TakeAll();
 
             if (!owner || !owner.CanAct) return;
 

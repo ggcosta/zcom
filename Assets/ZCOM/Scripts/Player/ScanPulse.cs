@@ -53,7 +53,7 @@ namespace Zcom
         {
             var input = PlayerInputSource.Current;
             bool uiOpen = owner && owner.inventory && owner.inventory.PanelOpen;
-            if (input.scan && owner && owner.CanAct && !uiOpen)
+            if (input.scan && owner && owner.CanAct && !uiOpen && !GameManager.InHub)
             {
                 if (Ready) Pulse();
                 else ProcAudio.Play("empty", 0.4f);

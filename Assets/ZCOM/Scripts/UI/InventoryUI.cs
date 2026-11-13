@@ -52,7 +52,7 @@ namespace Zcom
         RectTransform root, window;
         CanvasGroup dimGroup;
         GameObject dim;
-        RectTransform loadoutPanel, backpackPanel, containerPanel, hintBar, takeAllButton;
+        RectTransform loadoutPanel, backpackPanel, containerPanel, stashPanel, hintBar, takeAllButton;
         readonly List<PanelAnim> panels = new List<PanelAnim>();
         Text containerTitle, containerMicro, backpackCount, carryText, valueText;
         Image takeAllFrame, takeAllFill, massFill, hpFill, shFill;
@@ -61,6 +61,10 @@ namespace Zcom
         readonly List<SlotUi> loadoutSlots = new List<SlotUi>();
         readonly List<SlotUi> backpackSlots = new List<SlotUi>();
         readonly List<SlotUi> containerSlots = new List<SlotUi>();
+        // containerSlots = the crate's 3x3 grid followed by the ship stash's 5x5 grid (only one is bound at a time)
+        readonly List<SlotUi> crateSlots = new List<SlotUi>(), stashSlots = new List<SlotUi>();
+        Text stashMicro;
+        const int StashCols = 5;
         readonly List<Image[]> leaders = new List<Image[]>();
         RawImage operativeView;
         RectTransform pedestalA, pedestalB;
@@ -179,6 +183,7 @@ namespace Zcom
                 var s = MakeSlot(containerPanel, new Vector2(22 + cx * Pitch + Slot * 0.5f, -(Header + 14 + cy * Pitch + Slot * 0.5f)), new Vector2(Slot, Slot), false);
                 s.order = cx + cy;
                 containerSlots.Add(s);
+                crateSlots.Add(s);
             }
             takeAllButton = UiKit.Node("TakeAll", containerPanel, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -(Header + 14 + 3 * Pitch + 22)), new Vector2(3 * Pitch - 8, 54));
             takeAllFill = UiKit.Fill("Fill", takeAllButton, TacKit.Slot, new Color(0.22f, 0.14f, 0.03f, 0.9f));
@@ -190,6 +195,22 @@ namespace Zcom
 
             if (Kit) takeAllLabel.font = FieldKit.Display;
 
+            // Ship stash 5x5 (persistent storage, Profile.Stash)
+            int stashRows = Mathf.CeilToInt(Profile.StashSize / (float)StashCols);
+            stashPanel = Panel("Stash", new Vector2(StashCols * Pitch + 44, PanelH), "STASH", "", Amber);
+            stashMicro = Txt("Count", stashPanel, "", 18, UiKit.TextColor, TextAnchor.MiddleRight, new Vector2(-24, Kit ? -40 : -29), new Vector2(260, 26), new Vector2(1, 1));
+            if (Kit) { stashMicro.font = FieldKit.Display; stashMicro.fontSize = 28; stashMicro.color = FieldKit.InkSolid; }
+            stashMicro.rectTransform.pivot = new Vector2(1, 0.5f);
+            stashMicro.supportRichText = true;
+            for (int i = 0; i < StashCols * stashRows; i++)
+            {
+                int cx = i % StashCols, cy = i / StashCols;
+                var s = MakeSlot(stashPanel, new Vector2(22 + cx * Pitch + Slot * 0.5f, -(Header + 6 + cy * Pitch + Slot * 0.5f)), new Vector2(Slot, Slot), false);
+                s.order = cx + cy;
+                containerSlots.Add(s);
+                stashSlots.Add(s);
+            }
+
             // Bottom hint bar
             hintBar = UiKit.Node("HintBar", window, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 1), new Vector2(0, -PanelH * 0.5f - 22), new Vector2(1400, 44));
             UiKit.Fill("Fill", hintBar, Kit ? TacKit.Slot : TacKit.Plate, Kit ? FieldKit.Ink : TacKit.Glass);
@@ -197,7 +218,8 @@ namespace Zcom
             string K(string k) => $"<color=#{Hex(Amber)}>{k}</color>";
             string sep = Kit ? "<color=#4a4a46>  /  </color>" : "<color=#2c4656>     /     </color>";
             var hint = Txt("Hints", hintBar,
-                $"{K("LMB")}  DRAG{sep}{K("SHIFT")}  SPLIT{sep}{K("RMB")}  QUICK MOVE{sep}{K("DRAG OUT")}  DROP{sep}{K("CLICK")}  EQUIP{sep}{K("F")}  TAKE ALL{sep}{K("TAB")}  CLOSE",
+                GameManager.InHub ? $"{K("LMB")}  DRAG{sep}{K("SHIFT")}  SPLIT{sep}{K("RMB")}  QUICK MOVE{sep}{K("CLICK")}  EQUIP{sep}{K("TAB")}  CLOSE"
+                : $"{K("LMB")}  DRAG{sep}{K("SHIFT")}  SPLIT{sep}{K("RMB")}  QUICK MOVE{sep}{K("DRAG OUT")}  DROP{sep}{K("CLICK")}  EQUIP{sep}{K("F")}  TAKE ALL{sep}{K("TAB")}  CLOSE",
                 16, UiKit.TextDim, TextAnchor.MiddleCenter, new Vector2(0, 1), new Vector2(1400, 40), new Vector2(0.5f, 0.5f));
             hint.supportRichText = true;
             if (Kit) { hint.font = FieldKit.MonoFont; hint.fontSize = 13; }
@@ -206,7 +228,9 @@ namespace Zcom
                 // hologram design: amber key caps instead of a text line
                 hint.gameObject.SetActive(false);
                 var row = UiKit.Node("Keys", hintBar, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
-                var items = new[] { ("LMB", "DRAG"), ("SHIFT", "SPLIT"), ("RMB", "QUICK MOVE"), ("DRAG OUT", "DROP"), ("CLICK", "EQUIP"), ("F", "TAKE ALL"), ("TAB", "CLOSE") };
+                var items = GameManager.InHub
+                    ? new[] { ("LMB", "DRAG"), ("SHIFT", "SPLIT"), ("RMB", "QUICK MOVE"), ("CLICK", "EQUIP"), ("TAB", "CLOSE") }
+                    : new[] { ("LMB", "DRAG"), ("SHIFT", "SPLIT"), ("RMB", "QUICK MOVE"), ("DRAG OUT", "DROP"), ("CLICK", "EQUIP"), ("F", "TAKE ALL"), ("TAB", "CLOSE") };
                 float hx = 0f;
                 foreach (var (k, a) in items)
                 {
@@ -644,8 +668,10 @@ namespace Zcom
         void Layout()
         {
             bool hasContainer = inv.OpenContainer != null;
-            containerPanel.gameObject.SetActive(hasContainer);
-            float bpW = backpackPanel.sizeDelta.x, loW = loadoutPanel.sizeDelta.x, coW = containerPanel.sizeDelta.x;
+            bool stash = hasContainer && inv.OpenContainer.isStash;
+            containerPanel.gameObject.SetActive(hasContainer && !stash);
+            stashPanel.gameObject.SetActive(stash);
+            float bpW = backpackPanel.sizeDelta.x, loW = loadoutPanel.sizeDelta.x, coW = (stash ? stashPanel : containerPanel).sizeDelta.x;
             float total = loW + 20 + bpW + (hasContainer ? 20 + coW : 0);
             float x = -total * 0.5f, y = 26f;
             panels[0].home = new Vector2(x + loW * 0.5f, y);
@@ -653,12 +679,20 @@ namespace Zcom
             panels[1].home = new Vector2(x + bpW * 0.5f, y);
             x += bpW + 20;
             panels[2].home = new Vector2(x + coW * 0.5f, y);
+            panels[3].home = panels[2].home;
             hintBar.sizeDelta = new Vector2(total, 44);
             hintBar.anchoredPosition = new Vector2(0, y - PanelH * 0.5f - 14);
             titleRoot.anchoredPosition = new Vector2(-total * 0.5f + 4, y + PanelH * 0.5f + 46);
-            string where = (GameManager.I ? GameManager.I.CurrentArea : "KEPLER-7").ToUpperInvariant() + "  -  LUNAR MINING COLONY";
+            string where = (GameManager.I ? GameManager.I.CurrentArea : "KEPLER-7").ToUpperInvariant() + (GameManager.InHub ? "  -  DROPSHIP KESTREL" : "  -  LUNAR MINING COLONY");
             if (titleSub.text != where) titleSub.text = where;
-            if (hasContainer)
+            if (stash)
+            {
+                int used = 0;
+                for (int i = 0; i < inv.OpenContainer.Size; i++) if (!inv.OpenContainer[i].IsEmpty) used++;
+                string st = Kit ? $"{used} / {inv.OpenContainer.Size}" : $"<size=13><color=#{Hex(UiKit.TextDim)}>SLOTS</color></size>  {used} / {inv.OpenContainer.Size}";
+                if (stashMicro.text != st) stashMicro.text = st;
+            }
+            else if (hasContainer)
             {
                 containerTitle.text = inv.OpenContainerName ?? "CONTAINER";
                 bool any = false;
@@ -688,20 +722,23 @@ namespace Zcom
             {
                 boundContainer = inv.OpenContainer;
                 seenContainerVersion = -1;
-                // first look inside a crate: scan the items in one by one
-                if (boundContainer != null && scanned.Add(boundContainer))
+                // first look inside a crate: scan the items in one by one (the stash is your own: no scan)
+                if (boundContainer != null && !boundContainer.isStash && scanned.Add(boundContainer))
                 {
                     scanStart = Time.unscaledTime;
                     ProcAudio.Play("ui_scan", 0.45f, 0f);
                 }
                 else scanStart = -1f;
             }
-            for (int i = 0; i < containerSlots.Count; i++)
+            var active = boundContainer != null && boundContainer.isStash ? stashSlots : crateSlots;
+            foreach (var s in containerSlots)
+                if (!active.Contains(s)) { s.container = null; s.rt.gameObject.SetActive(false); }
+            for (int i = 0; i < active.Count; i++)
             {
                 bool on = boundContainer != null && i < boundContainer.Size;
-                containerSlots[i].container = on ? boundContainer : null;
-                containerSlots[i].index = i;
-                containerSlots[i].rt.gameObject.SetActive(on);
+                active[i].container = on ? boundContainer : null;
+                active[i].index = i;
+                active[i].rt.gameObject.SetActive(on);
             }
         }
 
@@ -912,7 +949,7 @@ namespace Zcom
 
         bool OverWindow(Vector2 screen)
         {
-            foreach (var p in new[] { loadoutPanel, backpackPanel, containerPanel })
+            foreach (var p in new[] { loadoutPanel, backpackPanel, containerPanel, stashPanel })
                 if (p.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(p, screen, UiCam)) return true;
             return false;
         }
@@ -1037,7 +1074,7 @@ namespace Zcom
                 if (ok) target.pop = 1f;
                 if (ok && target.container == inv.WeaponSlots && from.container != inv.WeaponSlots && inv.EquippedIndex == target.index) inv.Equip(target.index);
             }
-            else if (!OverWindow(mouse))
+            else if (!OverWindow(mouse) && !GameManager.InHub)      // nothing gets left lying around on the ship
             {
                 var stack = from.container.Take(from.index, dragAmount);
                 inv.DropToWorld(stack);
@@ -1063,7 +1100,13 @@ namespace Zcom
             }
             else if (s.container == inv.Backpack)
             {
-                if (Items.IsWeapon(st.id))
+                if (boundContainer != null && boundContainer.isStash)
+                {
+                    int left = boundContainer.Add(st);
+                    s.container.Set(s.index, new ItemStack(st.id, left));
+                    ok = left < st.count;
+                }
+                else if (Items.IsWeapon(st.id))
                 {
                     int e = inv.WeaponSlots.FirstEmpty();
                     ok = ItemContainer.Move(inv.Backpack, s.index, inv.WeaponSlots, e >= 0 ? e : inv.EquippedIndex);
@@ -1193,8 +1236,8 @@ namespace Zcom
             sb.Append($"<color=#{dimHex}>MASS</color>  <b>{d.weight * st.count:0.0} kg</b>     <color=#{dimHex}>VALUE</color>  <color=#{Hex(Amber)}><b>{d.value * st.count:N0} cr</b></color>");
             if (st.count > 1 || d.maxStack > 1) sb.Append($"     <color=#{dimHex}>STACK</color>  <b>{st.count}/{d.maxStack}</b>");
             sb.Append("\n<size=12><color=#6f8090>");
-            sb.Append(hover.container == boundContainer ? "RMB  take" : d.category == ItemCategory.Weapon && hover.container == inv.Backpack ? "RMB  equip to loadout" :
-                hover.container == inv.WeaponSlots ? "RMB  move to backpack     CLICK  equip" : boundContainer != null ? "RMB  store in crate" : "drag outside to drop");
+            sb.Append(hover.container == boundContainer ? "RMB  take" : hover.container == inv.Backpack && boundContainer != null && boundContainer.isStash ? "RMB  store in stash" : d.category == ItemCategory.Weapon && hover.container == inv.Backpack ? "RMB  equip to loadout" :
+                hover.container == inv.WeaponSlots ? "RMB  move to backpack     CLICK  equip" : boundContainer != null ? (boundContainer.isStash ? "RMB  store in stash" : "RMB  store in crate") : GameManager.InHub ? "" : "drag outside to drop");
             if (st.count > 1) sb.Append("     SHIFT+DRAG  split");
             sb.Append("</color></size>");
             tooltipFoot.text = sb.ToString();

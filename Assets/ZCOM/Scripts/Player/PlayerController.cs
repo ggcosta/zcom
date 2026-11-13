@@ -77,7 +77,7 @@ namespace Zcom
         public bool IsDashing => dashT > 0f;
         public bool IsMoving => new Vector2(velocity.x, velocity.z).sqrMagnitude > 0.6f;
         public float DashCooldown01 => Mathf.Clamp01(dashCdT / dashCooldown);
-        public bool CanAct => deathT < 0f && (health == null || health.IsAlive) && !GameFeel.Paused && !(GameManager.I && GameManager.I.IsExtracted);
+        public bool CanAct => deathT < 0f && (health == null || health.IsAlive) && !GameFeel.Paused && !(GameManager.I && (GameManager.I.IsExtracted || GameManager.I.Busy));
         public Vector3 Chest => transform.position + Vector3.up * aimHeight;
 
         void Awake()

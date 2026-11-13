@@ -52,7 +52,7 @@ If the scene is missing or you change a factory script, rebuild it from the menu
   - *Helix Beam*: hold for a continuous purple laser with twin helix strands that burns through up to 4 aliens and drains its cell.
   Bolts visibly fly and deal damage on impact; weapons have spinning emitter rings, glowing cores and eject their energy cell on recharge.
 - **The map (KEPLER-7)**, about 90 x 70 m, ringed by cliffs:
-  - *Landing Zone*: your drop pod and a starter crate.
+  - *Landing Zone*: your dropship, the KESTREL, and a starter crate.
   - *Kepler-7 Outpost*: three enterable buildings (barracks, lab, storage) with interiors and crates; roofs hide when you're inside.
   - *Crash Site*: a burning freighter wreck and a gold crate.
   - *Xeno Nest*: hive spires, eggs and a Brute guarding the Helix Beam.
@@ -91,9 +91,39 @@ If the scene is missing or you change a factory script, rebuild it from the menu
 - Level art, VFX and **audio are procedural** (primitives, generated textures, synthesized SFX).
   Sounds are played by id through `ProcAudio.Play("shot")` etc.
 
+## The dropship KESTREL (your base)
+
+Your dropship **ZC-07 "KESTREL"** exists in two instances:
+
+- **Inside the ship** (`Scenes/Ship.unity`, first in the build: the game starts here). Only the interior is shown
+  (no hull, sky or ground: a permanent cutaway against darkness), and it is roomier than the hull because it is its
+  own instance: 10.8 x 31 m with a walkable flight deck (viewscreens), the crew bay (stash, lockers, bunks, briefing
+  table), a mid bay with four marked bays for future workstations, and the cargo hold with the rear door. Weapons, grenades and the scan stay holstered and nothing is at
+  stake. The **stash** is the armoured locker in the crew bay: **E** opens a 5x5 stash next to your backpack (drag
+  items across, **RMB** stores / takes); it is saved to the profile and never at risk. The **rear door** (**E**: exit to
+  KEPLER-7) starts a raid.
+- **On KEPLER-7** the KESTREL stands at the landing zone with its ramp down and the blast door shut: you can't walk in.
+  You step off the ramp to start the raid. To extract, come back and **hold position at the door for 6 s** (the
+  engines draw an ambush; the HUD marks the ship once you have been away from it). Extracting keeps everything you
+  carried; dying, abandoning the raid (pause, **R**) or quitting mid-raid loses it. An empty loadout is refilled with
+  a standard-issue Ion Carbine. After the summary, **R** takes you back inside the ship.
+- **Model**: `Tools/Blender/zcom_dropship.py` (uses the bake library in `zcom_ship.py`). Chined armoured hull with
+  layered plating, glazed cockpit, stub wings, two engine nacelles, tail fins, landing gear, the rear ramp and blast
+  door; plus the larger interior instance (`interior_big`). Hull and interior are sliced at
+  deck + 1.45 m into `_Upper` / `_Lower` objects with section caps for the cutaway. Every object gets its own baked
+  PBR set (hull plating seams with per-panel tone, chipped paint, AO grime, dust, drip streaks, bevelled-edge normals,
+  hazard stripes, stencils, lights) in `Resources/Textures/Ship/` (hull 4096²). Previews: `Tools/Blender/previews/dropship/`.
+  `blender -b --factory-startup -P Tools/Blender/zcom_dropship.py -- Assets/ZCOM/Resources/Models Tools/Blender/previews/dropship [Object,...]`
+- **Code**: `Scripts/World/Dropship.cs` (both builds: parts, colliders, lights, extraction at the door, the hub's pad),
+  `ShipDoor.cs`, `StashLocker.cs`, `Scripts/Core/Profile.cs` (JSON in `Application.persistentDataPath/zcom_profile.json`).
+  Scenes: `ZCOM > Build Ship Scene` / `Build Vertical Slice Scene`; `ZCOM > Play From Ship`; `ZCOM > Rebuild Ship Materials`.
+- **Test**: `SmokeTest -zcomShip` starts inside, stashes loot, exits through the door, walks away and boards again to
+  extract, checks the carry came back, goes out again, dies and checks the carry was lost and the stash kept.
+  Smoke tests are muted.
+
 ## Raid loop, enemies and outpost (v3)
 
-- **Extraction**: an evac beacon (sky beam, north edge) - stand on the pad for 8 s to extract with your backpack; starting the
+- **Extraction**: hold position at the KESTREL's door for 6 s to extract with your backpack; starting the
   countdown alerts the hive (ambush wave). End-of-raid summary (`Scripts/UI/RaidUI.cs`): raid time, kills, camps, loot
   value secured or lost. **Esc** pauses (R restart, H controls, Q quit).
 - **Enemies** (`Tools/Blender/zcom_aliens.py`, designs in `Art/Reference/Codex/env_aliens.png`): Skitter, Spitter and Brute

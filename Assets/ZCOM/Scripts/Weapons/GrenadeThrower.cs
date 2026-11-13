@@ -97,7 +97,7 @@ namespace Zcom
             }
 
             var input = PlayerInputSource.Current;
-            if (!owner || !owner.CanAct || (owner.inventory && owner.inventory.PanelOpen)) { CancelAim(); wasHeld = false; return; }
+            if (!owner || !owner.CanAct || (owner.inventory && owner.inventory.PanelOpen) || GameManager.InHub) { CancelAim(); wasHeld = false; return; }
 
             bool held = input.grenade;
             if (held && !wasHeld && charges == 0) ProcAudio.Play("empty", 0.5f);

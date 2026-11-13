@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/ZCOM/Scenes/Ship.unity
+    guid: 4e8e29f5fb9b548fe9a7b3cbfbf39126
+  - enabled: 1
     path: Assets/ZCOM/Scenes/VerticalSlice.unity
     guid: f2c5b084065ca4341a2164a6bec88a6a
   - enabled: 1

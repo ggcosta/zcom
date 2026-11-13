@@ -8,6 +8,8 @@ namespace Zcom
         public readonly string name;
         public readonly ItemStack[] slots;
         readonly System.Func<ItemId, bool> filter;
+        /// <summary>The ship's stash (persistent storage): the inventory window lays it out larger and RMB stores into it.</summary>
+        public bool isStash;
 
         /// <summary>Bumped on every change so UI can redraw only when needed.</summary>
         public int Version { get; private set; }

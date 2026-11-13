@@ -52,14 +52,13 @@ namespace Zcom
             BuildBorders(t);
 
             // ---------- Areas ----------
-            Vector3 spawn = new Vector3(-31f, 0f, -22f);
-            BuildLandingZone(t, new Vector3(-32f, 0, -25f));
-            BuildWalkway(t, new Vector3(-28f, 0, -19.5f), new Vector3(-14f, 0, -4f));
+            BuildLandingZone(t, ShipPos);
+            Vector3 spawn = Ship ? Ship.SpawnWorld : new Vector3(-31f, 0f, -22f);
+            BuildWalkway(t, WalkStart, new Vector3(-14f, 0, -4f));
             BuildOutpost(t, new Vector3(-8f, 0, 2f));
             BuildCrashSite(t, new Vector3(22f, 0, -16f));
             BuildNest(t, new Vector3(25f, 0, 19f));
             BuildMiningRidge(t, new Vector3(-27f, 0, 20f));
-            BuildEvac(t, EvacPos);
             BuildScatter(t);
 
             root.AddComponent<AmbientDust>();
@@ -69,7 +68,7 @@ namespace Zcom
             surface.collectObjects = CollectObjects.Children;
             surface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
 
-            return new Result { root = root, surface = surface, spawn = spawn, spawnRotation = Quaternion.Euler(0f, 45f, 0f) };
+            return new Result { root = root, surface = surface, spawn = spawn, spawnRotation = Quaternion.Euler(0f, 90f, 0f) };
         }
 
         // ------------------------------------------------------------------ materials
@@ -133,7 +132,9 @@ namespace Zcom
         static readonly List<(Vector2 c, float r)> flats = new List<(Vector2, float)>();
         static readonly List<(Vector2 a, Vector2 b, float w)> flatLines = new List<(Vector2, Vector2, float)>();
         static readonly Vector2 NestC = new Vector2(25f, 19f), CrashCrater = new Vector2(22f, -8f);
-        static readonly Vector3 EvacPos = new Vector3(3f, 0f, 29f);
+        // the dropship KESTREL lands nose-west at the landing zone; its ramp faces east, towards the walkway
+        static readonly Vector3 ShipPos = new Vector3(-31f, 0f, -25f), WalkStart = new Vector3(-16.5f, 0f, -23f);
+        public static Dropship Ship;
 
         static float S01(float x) { x = Mathf.Clamp01(x); return x * x * (3f - 2f * x); }
 
@@ -185,14 +186,14 @@ namespace Zcom
         {
             craters.Clear(); flats.Clear(); flatLines.Clear();
             // play areas stay perfectly flat (buildings, pads, chests, camps)
-            flats.Add((new Vector2(-32f, -25f), 8.5f));       // landing zone
+            flats.Add((new Vector2(ShipPos.x, ShipPos.z), 13f));       // landing zone: the dropship
+            flatLines.Add((new Vector2(ShipPos.x - 12f, ShipPos.z), new Vector2(ShipPos.x + 15f, ShipPos.z), 7f));
             flats.Add((new Vector2(-8f, 2f), 15.5f));         // outpost
             flats.Add((new Vector2(-27f, 20f), 7f));          // mining ridge rig
             flats.Add((NestC, 6f));
             flats.Add((new Vector2(26.5f, -20.5f), 2.5f));    // crash-site crate
             flats.Add((new Vector2(21f, -19f), 4f));          // crash-site camp
-            flatLines.Add((new Vector2(-28f, -19.5f), new Vector2(-14f, -4f), 2f));
-            flats.Add((new Vector2(EvacPos.x, EvacPos.z), 6f));                // evac point
+            flatLines.Add((new Vector2(WalkStart.x, WalkStart.z), new Vector2(-14f, -4f), 2f));
             craters.Add((CrashCrater, 8.5f, 1.3f));
             var rr = new System.Random(77);
             for (int i = 0; i < 40 && craters.Count < 14; i++)
@@ -684,22 +685,21 @@ namespace Zcom
 
         static void BuildLandingZone(Transform t, Vector3 c)
         {
-            var g = Group("LandingZone", t, c);
-            Zone(t, "LANDING ZONE", "Your drop pod. It's quiet here... for now.", c, 9f, new Color(1f, 0.75f, 0.2f));
-            Visual("PadBase", g, new Vector3(0, 0.03f, 0), new Vector3(10f, 0.03f, 10f), mDarkSteel, PrimitiveType.Cylinder, default, false);
-            Visual("PadRing", g, new Vector3(0, 0.045f, 0), new Vector3(9.2f, 0.03f, 9.2f), mYellow, PrimitiveType.Cylinder, default, false);
-            Visual("PadDeck", g, new Vector3(0, 0.06f, 0), new Vector3(8.6f, 0.03f, 8.6f), mPad, PrimitiveType.Cylinder, default, false);
+            var g = Group("LandingZone", t, Vector3.zero);
+            Zone(t, "LANDING ZONE", "The KESTREL is down. Hold position at its door to extract.", c + new Vector3(15f, 0f, 0f), 9f, new Color(1f, 0.75f, 0.2f));
+            Ship = Dropship.Build(t, c, -90f, false);
+            keepClear.Add((c, 15f));
+            keepClear.Add((c + new Vector3(15f, 0f, 0f), 5f));
+            // landing pad markings around the ramp foot, a starter crate and some offloaded cargo
+            Vector3 ramp = c + new Vector3(15.2f, 0f, 0f);
+            Visual("PadStripe", g, ramp + new Vector3(0f, 0.03f, 0f), new Vector3(0.35f, 0.02f, 7.4f), mYellow, PrimitiveType.Cube, default, false);
             for (int i = 0; i < 4; i++)
-                Visual($"Chevron{i}", g, Quaternion.Euler(0, i * 90f + 45f, 0) * new Vector3(0, 0.09f, 2.6f), new Vector3(1.4f, 0.02f, 0.35f), mYellow, PrimitiveType.Cube, new Vector3(0, i * 90f + 45f, 0), false);
-
-            // Drop pod (hatch facing the pad)
-            Prop("DropPod", g, c + new Vector3(-3.6f, 0, -3.6f), 45f, 1f, true, 0.05f);
-            PointLight("PodLight", g, new Vector3(-2.2f, 1.5f, -2.2f), new Color(1f, 0.55f, 0.2f), 7f, 8f);
-            Chest(g, c + new Vector3(3.5f, 0, -3f), -30f, CrateLoot.Basic);
-            Prop("Containers", g, c + new Vector3(5.6f, 0, 0.2f), 100f, 0.85f);
-            Prop("Canisters", g, c + new Vector3(5.2f, 0, 2.6f), 15f, 0.9f);
-            Lamp(g, c + new Vector3(4.5f, 0, 4.5f), new Color(1f, 0.62f, 0.28f), mYellow);
-            Lamp(g, c + new Vector3(-5f, 0, 4f), new Color(1f, 0.62f, 0.28f), mYellow);
+                Visual($"Chevron{i}", g, ramp + new Vector3(1.4f + i * 1.3f, 0.03f, 0f), new Vector3(0.8f, 0.02f, 0.3f), mYellow, PrimitiveType.Cube, new Vector3(0f, 90f, 0f), false);
+            Chest(g, c + new Vector3(17.5f, 0, -4.6f), -60f, CrateLoot.Basic);
+            Prop("Containers", g, c + new Vector3(10.5f, 0, -8.4f), 15f, 0.8f);
+            Prop("Canisters", g, c + new Vector3(18.6f, 0, 4.4f), 40f, 0.85f);
+            Lamp(g, c + new Vector3(18.8f, 0, -3.2f), new Color(1f, 0.62f, 0.28f), mYellow);
+            Lamp(g, c + new Vector3(19.2f, 0, 3.4f), new Color(1f, 0.62f, 0.28f), mYellow);
         }
 
         static void BuildWalkway(Transform t, Vector3 a, Vector3 b)
@@ -865,34 +865,6 @@ namespace Zcom
 
             Camp(t, "MINING RIDGE", c + new Vector3(0, 0, 0f), 6f,
                 (AlienType.Skitter, new Vector3(-1f, 0, 0f)), (AlienType.Skitter, new Vector3(1.5f, 0, -1f)));
-        }
-
-        /// <summary>Extraction point: pad, sky beam, beacon lamps. Hold position on it to extract (ExtractionZone).</summary>
-        static void BuildEvac(Transform t, Vector3 c)
-        {
-            var g = Group("EvacPoint", t, c);
-            Zone(t, "EVAC POINT", "Hold the pad until the dropship locks on.", c, 6f, new Color(0.35f, 0.9f, 1f));
-            Visual("PadBase", g, new Vector3(0, 0.03f, 0), new Vector3(8f, 0.03f, 8f), mDarkSteel, PrimitiveType.Cylinder, default, false);
-            Visual("PadRing", g, new Vector3(0, 0.045f, 0), new Vector3(7.2f, 0.03f, 7.2f), mCyan, PrimitiveType.Cylinder, default, false);
-            Visual("PadDeck", g, new Vector3(0, 0.06f, 0), new Vector3(6.6f, 0.03f, 6.6f), mFloor, PrimitiveType.Cylinder, default, false);
-            var fx = Shader.Find("ZCOM/FxAdditive");
-            var beamMat = new Material(fx ? fx : Shader.Find("Universal Render Pipeline/Unlit")) { name = "EvacBeam" };
-            beamMat.SetTexture("_MainTex", ProcTex.Glow);
-            beamMat.SetColor("_Color", new Color(0.35f, 0.9f, 1f) * 0.35f);
-            var beam = Visual("Beam", g, new Vector3(0, 32f, 0), new Vector3(1.1f, 30f, 1.1f), beamMat, PrimitiveType.Cylinder, default, false);
-            var core = Visual("BeamCore", g, new Vector3(0, 32f, 0), new Vector3(0.35f, 30f, 0.35f), beamMat, PrimitiveType.Cylinder, default, false);
-            foreach (var dpos in new[] { new Vector3(4.6f, 0, 0), new Vector3(-4.6f, 0, 0), new Vector3(0, 0, 4.6f), new Vector3(0, 0, -4.6f) })
-            {
-                var lg = Group("Beacon", g, c + dpos, Mathf.Atan2(-dpos.x, -dpos.z) * Mathf.Rad2Deg);
-                if (!Kit("Lamp", lg, Vector3.zero, 0f)) Box("Post", lg, new Vector3(0, 1.8f, 0), new Vector3(0.3f, 3.6f, 0.3f), mDarkSteel);
-                SpotLight("Light", lg, new Vector3(0, 3.3f, 0.9f), new Color(0.3f, 0.85f, 1f), 26f, 11f);
-            }
-            var bl = PointLight("BeaconLight", g, new Vector3(0, 4f, 0), new Color(0.35f, 0.9f, 1f), 4f, 16f);
-            var ez = g.gameObject.AddComponent<ExtractionZone>();
-            ez.beam = beam.GetComponent<Renderer>();
-            ez.beaconLight = bl;
-            foreach (var col in g.GetComponentsInChildren<Collider>())
-                if (col.transform.name.StartsWith("Beam") || col.transform.name == "Ring" || col.transform.name.StartsWith("Pad")) Object.DestroyImmediate(col);
         }
 
         static void BuildScatter(Transform t)

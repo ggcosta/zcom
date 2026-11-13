@@ -21,7 +21,10 @@ namespace Zcom.EditorTools
         const string KeyShowcase = "zcom_smoke_showcase";
         const string KeyTour = "zcom_smoke_tour";
         const string KeyUi = "zcom_smoke_ui";   // "A" = tac-link, "B" = field kit, "" = the saved preference
-        const string KeyVideo = "zcom_smoke_video";   // -zcomVideo: record every frame at 30 fps (FrameRecorder) instead of screenshots
+        const string KeyVideo = "zcom_smoke_video";
+        const string KeyShip = "zcom_smoke_ship";     // -zcomShip: start aboard the ship, use the stash, deploy, check the carry
+        static bool ShipMode => SessionState.GetBool(KeyShip, false);
+        static string TestProfilePath => Path.Combine(SessionState.GetString(KeyOut, "."), "profile.json");   // -zcomVideo: record every frame at 30 fps (FrameRecorder) instead of screenshots
         const int VideoFps = 30;
         static int videoStartFrame = -1;
         static bool Video => SessionState.GetBool(KeyVideo, false);
@@ -155,6 +158,7 @@ namespace Zcom.EditorTools
         static SmokeTest()
         {
             if (!SessionState.GetBool(KeyActive, false)) return;
+            Profile.PathOverride = TestProfilePath;      // never touch the player's own profile
             InventoryUI.FocusBlur = false;      // captures render to a texture, where the blur would also hit the UI
             string ui = SessionState.GetString(KeyUi, "");
             if (ui == "A") UiStyle.Override = UiDesign.TacLink;
@@ -171,6 +175,7 @@ namespace Zcom.EditorTools
             SessionState.SetBool(KeyPassive, false);
             SessionState.SetBool(KeyShowcase, false);
             SessionState.SetBool(KeyTour, false);
+            SessionState.SetBool(KeyShip, false);
             Start(Path.GetFullPath("Logs/ZcomSmoke"), 30f);
         }
 
@@ -189,6 +194,7 @@ namespace Zcom.EditorTools
             SessionState.SetBool(KeyShowcase, System.Array.IndexOf(args, "-zcomShowcase") >= 0);
             SessionState.SetBool(KeyTour, System.Array.IndexOf(args, "-zcomTour") >= 0);
             SessionState.SetBool(KeyVideo, System.Array.IndexOf(args, "-zcomVideo") >= 0);
+            SessionState.SetBool(KeyShip, System.Array.IndexOf(args, "-zcomShip") >= 0);
             Start(outDir, duration);
         }
 
@@ -200,8 +206,10 @@ namespace Zcom.EditorTools
             SessionState.SetString(KeyOut, outDir);
             SessionState.SetInt(KeyErrors, 0);
             SessionState.SetFloat(KeyDuration, duration);
+            if (File.Exists(TestProfilePath)) File.Delete(TestProfilePath);     // every run starts with a fresh operative
             if (!File.Exists(SliceBuilder.ScenePath)) SliceBuilder.Build();
-            EditorSceneManager.OpenScene(SliceBuilder.ScenePath);
+            if (ShipMode && !File.Exists(ShipSceneBuilder.ScenePath)) ShipSceneBuilder.Build();
+            EditorSceneManager.OpenScene(ShipMode ? ShipSceneBuilder.ScenePath : SliceBuilder.ScenePath);
             EditorApplication.update -= Tick;
             EditorApplication.update += Tick;
             Application.logMessageReceived -= OnLog;
@@ -209,8 +217,20 @@ namespace Zcom.EditorTools
             EditorApplication.EnterPlaymode();
         }
 
+        static bool nanReported;
         static void OnLog(string msg, string stack, LogType type)
         {
+            if (!nanReported && msg.Contains("invalid MinMaxAABB"))
+            {
+                nanReported = true;
+                bool Bad(Vector3 v) => float.IsNaN(v.x) || float.IsNaN(v.y) || float.IsNaN(v.z) || float.IsInfinity(v.x) || float.IsInfinity(v.y);
+                foreach (var rt in Object.FindObjectsByType<RectTransform>(FindObjectsSortMode.None))
+                    if (Bad(rt.localPosition) || Bad(rt.localScale) || Bad(rt.sizeDelta) || Bad(rt.localEulerAngles))
+                    {
+                        string path = rt.name; var t = rt.parent; while (t) { path = t.name + "/" + path; t = t.parent; }
+                        Debug.Log($"[ZCOM NAN] {path} pos={rt.localPosition} scale={rt.localScale} size={rt.sizeDelta}");
+                    }
+            }
             if (type != LogType.Error && type != LogType.Exception && type != LogType.Assert) return;
             SessionState.SetInt(KeyErrors, SessionState.GetInt(KeyErrors, 0) + 1);
             string dir = SessionState.GetString(KeyOut, "");
@@ -227,6 +247,14 @@ namespace Zcom.EditorTools
             }
             float t = Clock();
             float duration = SessionState.GetFloat(KeyDuration, 32f);
+            string sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+            if (sceneName != lastScene) { if (lastScene != null) Setup(); lastScene = sceneName; }
+            if (ShipMode)
+            {
+                ShipTick(t);
+                if (t >= SessionState.GetFloat(KeyDuration, 32f)) Finish(t);
+                return;
+            }
 
             // Opening shot, then combat shots whenever enough aliens are on screen.
             if (shotIndex == 0 && t >= 1.5f) { Capture("t01_start"); CaptureOverview(); shotIndex++; lastShot = t; }
@@ -280,21 +308,212 @@ namespace Zcom.EditorTools
                 Capture($"boom_{t:00.0}");
             }
 
-            if (t >= duration)
+            if (t >= duration) Finish(t);
+        }
+
+        static string lastScene;
+
+        static void Finish(float t)
+        {
             {
                 var gm = GameManager.I;
                 string summary = $"duration={t:0.0}s areasVisited={visitedZones.Count} kills={(gm ? gm.Kills : -1)} " +
                                  $"aliveAliens={Alien.All.Count} playerHP={(PlayerController.I ? PlayerController.I.health.Health : -1)} " +
-                                 $"errors={SessionState.GetInt(KeyErrors, 0)} recordedSfx={ProcAudio.RecordedClips} corpses={AlienCorpse.Spawned} " + LootSummary();
+                                 $"errors={SessionState.GetInt(KeyErrors, 0)} recordedSfx={ProcAudio.RecordedClips} corpses={AlienCorpse.Spawned} " + LootSummary() +
+                                 (ShipMode ? " " + shipReport : "");
                 File.WriteAllText(Path.Combine(SessionState.GetString(KeyOut, "."), "summary.txt"), summary);
                 Debug.Log("[ZCOM SMOKE] " + summary);
                 int errors = SessionState.GetInt(KeyErrors, 0);
                 SessionState.SetBool(KeyActive, false);
                 PlayerInputSource.Override = null;
+                AudioListener.volume = 1f;
+                if (!Application.isBatchMode) EditorUtility.audioMasterMute = false;
                 EditorApplication.update -= Tick;
                 if (Application.isBatchMode) EditorApplication.Exit(errors > 0 ? 1 : 0);
                 else EditorApplication.ExitPlaymode();
             }
+        }
+
+
+        // ------------------------------------------------------------------ ship (-zcomShip): the dropship loop
+        // start aboard -> stash loot -> walk down the ramp (raid starts) -> board, hold the cargo bay (extract)
+        // -> next raid starts aboard with the carry kept -> walk out -> die -> next raid: carry lost, stash kept
+        static int shipStage;
+        static float shipStageT;
+        static bool shipStageFirst = true;
+        static string shipReport = "ship=incomplete";
+        static int shipRouteK;
+
+        static void ShipNext()
+        {
+            var p = PlayerController.I;
+            if (p && Dropship.I) Debug.Log($"[ZCOM SMOKE] ship stage {shipStage} -> {shipStage + 1} at {shipStageT:0.0}s, operative at ship-local {Dropship.I.transform.InverseTransformPoint(p.transform.position)} preRaid={(GameManager.I ? GameManager.I.PreRaid : false)}");
+            shipStage++; shipStageT = 0f; shipStageFirst = true;
+        }
+
+        static Vector3 ShipPoint(float x, float y, float z) => Dropship.I ? Dropship.I.transform.TransformPoint(new Vector3(x, y, z)) : Vector3.zero;
+
+        static void ShipShots(string prefix)
+        {
+            CaptureFrom(prefix + "_hero", ShipPoint(-15f, 8f, 16f), ShipPoint(0f, 2.6f, 0f));
+            CaptureFrom(prefix + "_rear", ShipPoint(10f, 6.5f, -24f), ShipPoint(0f, 2f, -8f));
+            CaptureFrom(prefix + "_side", ShipPoint(-20f, 3.5f, -1f), ShipPoint(0f, 2.8f, 0f));
+            CaptureFrom(prefix + "_top", ShipPoint(-12f, 26f, -12f), ShipPoint(0f, 2f, -1f));
+        }
+
+        static void ShipTick(float t)
+        {
+            var p = PlayerController.I;
+            var inv = p ? p.inventory : null;
+            var gm = GameManager.I;
+            if (shipStage == 0 && t >= 1.2f && inv && gm)
+            {
+                if (!gm.hub) Debug.LogError("[ZCOM SMOKE] the game should start inside the ship");
+                inv.AddItem(new ItemStack(ItemId.Gold, 12));
+                inv.AddItem(new ItemStack(ItemId.Xenite, 4));
+                inv.AddItem(new ItemStack(ItemId.Stone, 25));
+                inv.AddItem(new ItemStack(ItemId.NovaScatter, 1));
+                Capture("ship_inside");
+                CaptureFrom("ship_inside_wide", ShipPoint(-16f, 26f, -22f), ShipPoint(0f, 1.7f, 1f));
+                CaptureFrom("ship_stash_close", ShipPoint(1.0f, 4.0f, 7.2f), ShipPoint(4.95f, 3.0f, 8.5f));
+                CaptureFrom("ship_hold_close", ShipPoint(-2f, 7f, -1f), ShipPoint(0f, 2f, -10f));
+                CaptureFrom("ship_flightdeck", ShipPoint(-2.5f, 6.5f, 10.5f), ShipPoint(0f, 2f, 15.5f));
+                CaptureFrom("ship_midbay", ShipPoint(-6f, 9f, -5f), ShipPoint(0f, 1.7f, 0.5f));
+                ShipNext();
+            }
+            if (shipStage == 6 && gm && !gm.hub && shipStageT > 1.5f && shipStageT - Time.unscaledDeltaTime <= 1.5f && inv)
+            {
+                Capture("raid_start");
+                ShipShots("ship");
+                bool carried = inv.Backpack.CountOf(ItemId.Stone) == 25 && inv.HasWeapon(WeaponKind.NovaScatter) && inv.Backpack.CountOf(ItemId.Gold) == 0;
+                if (!Profile.InRaid || !carried) Debug.LogError($"[ZCOM SMOKE] deploy check failed: inRaid={Profile.InRaid} carried={carried}");
+            }
+            if (shipStage == 7 && shipStageT > 3f && shipStageT - Time.unscaledDeltaTime <= 3f) Capture("ship_boarding");
+            if (shipStage == 8 && gm && gm.IsExtracted && shipStageT > 1.5f && shipStageT - Time.unscaledDeltaTime <= 1.5f) Capture("ship_extracted");
+            if (shipStage == 9 && gm && gm.hub && shipStageT > 1.5f && inv)
+            {
+                int stone = inv.Backpack.CountOf(ItemId.Stone), gold = inv.Backpack.CountOf(ItemId.Gold);
+                bool nova = inv.HasWeapon(WeaponKind.NovaScatter);
+                int stashGold = Profile.Stash.CountOf(ItemId.Gold), stashX = Profile.Stash.CountOf(ItemId.Xenite);
+                bool ok = stone == 25 && gold == 0 && nova && stashGold == 12 && stashX == 4 && !Profile.InRaid && Profile.Extractions == 1;
+                shipReport = $"extract={(ok ? "OK" : "FAIL")} keptStone={stone} keptNova={nova} stashGold={stashGold} stashXenite={stashX} extractions={Profile.Extractions}";
+                if (!ok) Debug.LogError("[ZCOM SMOKE] extraction flow check failed: " + shipReport);
+                Capture("ship_back_inside");
+                ShipNext();
+            }
+            if (shipStage == 11 && gm && !gm.hub && !gm.IsGameOver && p && p.health.IsAlive && shipStageT > 1.5f)
+            {
+                for (int i = 0; i < 6 && p.health.IsAlive; i++)
+                    p.health.TakeDamage(new DamageInfo { amount = 400f, point = p.transform.position, direction = Vector3.forward });
+            }
+            if (shipStage == 11 && gm && gm.IsGameOver && shipStageT > 3.5f && shipStageT - Time.unscaledDeltaTime <= 3.5f) Capture("raid_kia");
+            if (shipStage == 12 && gm && gm.hub && shipStageT > 1.5f && inv)
+            {
+                bool lost = inv.Backpack.IsEmpty && inv.WeaponSlots.CountOf(ItemId.NovaScatter) == 0 && inv.WeaponSlots.CountOf(ItemId.IonCarbine) == 1;
+                bool kept = Profile.Stash.CountOf(ItemId.Gold) == 12 && Profile.Stash.CountOf(ItemId.Xenite) == 4 && !Profile.InRaid;
+                shipReport += $" death={(lost && kept ? "OK" : "FAIL")} carryLost={lost} stashKept={kept} deaths={Profile.Deaths}";
+                if (!(lost && kept)) Debug.LogError("[ZCOM SMOKE] death flow check failed: " + shipReport);
+                SessionState.SetFloat(KeyDuration, t + 0.5f);
+                ShipNext();
+            }
+        }
+
+        static PlayerInputFrame ShipInput(PlayerInputFrame f)
+        {
+            var p = PlayerController.I;
+            var cam = CameraRig.I ? CameraRig.I.Cam : null;
+            var gm = GameManager.I;
+            if (!p || !cam || !gm) return f;
+            var inv = p.inventory;
+            float dt = Time.unscaledDeltaTime;
+            shipStageT += dt;
+            bool first = shipStageFirst;
+            shipStageFirst = false;
+            Vector3 fwd = cam.transform.forward; fwd.y = 0; fwd.Normalize();
+            Vector3 right = cam.transform.right; right.y = 0; right.Normalize();
+            Vector2 MoveTo(Vector3 target)
+            {
+                Vector3 d = target - p.transform.position; d.y = 0f;
+                if (d.magnitude < 0.35f) return Vector2.zero;
+                d.Normalize();
+                return new Vector2(Vector3.Dot(d, right), Vector3.Dot(d, fwd));
+            }
+            bool Walk(params Vector3[] route)       // waypoint by waypoint (never back); true at the end
+            {
+                if (first) shipRouteK = 0;
+                while (shipRouteK < route.Length - 1)
+                {
+                    Vector3 d = route[shipRouteK] - p.transform.position; d.y = 0f;
+                    if (d.magnitude > 0.6f) break;
+                    shipRouteK++;
+                }
+                f.move = MoveTo(route[shipRouteK]);
+                return shipRouteK == route.Length - 1 && f.move == Vector2.zero;
+            }
+            f.pointer = new Vector2(Screen.width * 0.6f, Screen.height * 0.6f);
+            var stash = Object.FindFirstObjectByType<StashLocker>();
+            var ui = InventoryUI.I;
+            Vector3 door = Dropship.I ? Dropship.I.DoorWorld : p.transform.position;
+            bool DoorFocus() => p.GetComponent<PlayerInteractor>().Focus is ShipDoor;
+            switch (shipStage)
+            {
+                case 1: // walk up to the stash
+                    {
+                        Vector3 spot = stash ? stash.PromptPosition : p.transform.position; spot.y = 0f;
+                        if (Walk(ShipPoint(0f, 0f, -4.5f), ShipPoint(0f, 0f, 4f), ShipPoint(1.5f, 0f, 6.5f), spot) || shipStageT > 15f) ShipNext();
+                    }
+                    break;
+                case 2: // open it
+                    if (first && p.GetComponent<PlayerInteractor>().Focus is StashLocker) f.interact = true;
+                    else if (shipStageT > 0.2f && shipStageT < 0.4f && !(inv.PanelOpen && inv.OpenContainer == Profile.Stash)) f.interact = true;
+                    if (shipStageT > 1.4f) { Capture("ship_stash_open"); ShipNext(); }
+                    break;
+                case 3: // RMB gold, then xenite, into the stash
+                    {
+                        int gi = FindBackpack(inv, s => s.id == ItemId.Gold);
+                        int xi = FindBackpack(inv, s => s.id == ItemId.Xenite);
+                        if (shipStageT < 0.5f) { if (gi >= 0 && ui) f.pointer = ui.SlotScreenPos(inv.Backpack, gi); if (first) f.rightClick = true; }
+                        else if (shipStageT < 1.0f) { if (xi >= 0 && ui) f.pointer = ui.SlotScreenPos(inv.Backpack, xi); if (shipStageT - dt < 0.5f) f.rightClick = true; }
+                        if (shipStageT > 1.6f) { Capture("ship_stash_stored"); ShipNext(); }
+                    }
+                    break;
+                case 4: // close
+                    if (first) f.cancel = true;
+                    if (shipStageT > 0.8f) ShipNext();
+                    break;
+                case 5: // to the rear door, E: out onto KEPLER-7
+                case 10:
+                    if (gm.hub)
+                    {
+                        bool there = shipStage == 5 ? Walk(ShipPoint(1.5f, 0f, 6.5f), ShipPoint(0f, 0f, 4f), ShipPoint(0f, 0f, -4.5f), door) : Walk(door);
+                        if ((there || DoorFocus()) && Mathf.Repeat(shipStageT, 0.5f) < dt) f.interact = DoorFocus();
+                        if (DoorFocus() && shipStageT > 0.5f && Mathf.Repeat(shipStageT, 1f) < dt) Capture(shipStage == 5 ? "ship_door" : "ship_door2");
+                    }
+                    else ShipNext();
+                    if (shipStageT > 25f) { Debug.LogError("[ZCOM SMOKE] could not leave the ship"); SessionState.SetFloat(KeyDuration, 0f); }
+                    break;
+                case 6: // outside: walk away from the ship, then back up the ramp to its door
+                    if (shipStageT > 2.5f && Walk(ShipPoint(0f, 0f, -27f), ShipPoint(0f, 0f, -16f), door)) ShipNext();
+                    else if (shipStageT <= 2.5f) shipRouteK = 0;
+                    if (shipStageT > 30f) ShipNext();
+                    break;
+                case 7: // hold the door until extracted
+                    f.move = MoveTo(door);
+                    if (gm.IsExtracted) ShipNext();
+                    if (shipStageT > 20f) { Debug.LogError("[ZCOM SMOKE] boarding at the door did not extract"); ShipNext(); }
+                    break;
+                case 8: // summary -> R: back inside the ship
+                    f.restart = gm.IsExtracted && shipStageT > 2.5f && shipStageT < 2.7f;
+                    if (gm.hub) ShipNext();
+                    if (shipStageT > 15f) { Debug.LogError("[ZCOM SMOKE] did not return to the ship after extracting"); ShipNext(); }
+                    break;
+                case 11: // (killed by ShipTick) KIA screen -> R
+                    f.restart = gm.IsGameOver && shipStageT > 4.5f && shipStageT < 4.7f;
+                    if (gm.hub) ShipNext();
+                    if (shipStageT > 20f) { Debug.LogError("[ZCOM SMOKE] did not return to the ship after dying"); SessionState.SetFloat(KeyDuration, 0f); }
+                    break;
+            }
+            return f;
         }
 
         // ------------------------------------------------------------------ area tour (-zcomTour): teleport + screenshot each area
@@ -323,6 +542,8 @@ namespace Zcom.EditorTools
                 cc.enabled = false;
                 var pos = TourStops[stop].pos;
                 pos.y = MapBuilder.Height(pos.x, pos.z) + 0.1f;
+                bool evac = TourStops[stop].name.StartsWith("tour_evac") || TourStops[stop].name == "tour_summary";
+                if (evac && Dropship.I) pos = Dropship.I.DoorWorld + Vector3.up * 0.1f;
                 p.transform.position = pos;
                 cc.enabled = true;
                 foreach (var a in Alien.All) if (a) a.aggroRange = 0f;
@@ -659,6 +880,9 @@ namespace Zcom.EditorTools
         static void Setup()
         {
             PlayerInputSource.Override = Autopilot;
+            // test runs are silent (the editor would otherwise play music and SFX through the speakers)
+            EditorUtility.audioMasterMute = true;
+            AudioListener.volume = 0f;
             var cam = CameraRig.I ? CameraRig.I.Cam : Camera.main;
             if (Application.isBatchMode && cam)
             {
@@ -735,6 +959,7 @@ namespace Zcom.EditorTools
         static PlayerInputFrame Autopilot()
         {
             var f = new PlayerInputFrame { slot = -1 };
+            if (ShipMode) return ShipInput(f);
             if (SessionState.GetBool(KeyTour, false)) return f;
             if (SessionState.GetBool(KeyPassive, false))
             {
@@ -819,7 +1044,7 @@ namespace Zcom.EditorTools
                 float lb = 14f * 14f;
                 foreach (var it in Interactables.All)
                 {
-                    if (Interactables.IsGone(it) || !it.CanInteract || skipTargets.Contains(it)) continue;
+                    if (Interactables.IsGone(it) || !it.CanInteract || skipTargets.Contains(it) || it is StashLocker) continue;
                     float d = (it.PromptPosition - pos).sqrMagnitude;
                     if (d < lb) { lb = d; loot = it; }
                 }

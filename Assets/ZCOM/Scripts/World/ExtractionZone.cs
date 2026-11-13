@@ -3,7 +3,7 @@ using UnityEngine;
 namespace Zcom
 {
     /// <summary>
-    /// Evac point: stand inside for <see cref="holdTime"/> seconds to extract with everything in the backpack.
+    /// Evac point (the dropship's rear door): stand inside for <see cref="holdTime"/> seconds to extract with everything in the backpack.
     /// Starting the countdown signals the hive: a pack of skitters converges on the beacon.
     /// The beam, ring and lights pulse harder as the countdown runs.
     /// </summary>
@@ -11,6 +11,8 @@ namespace Zcom
     {
         public float radius = 3.2f;
         public float holdTime = 8f;
+        [Tooltip("The zone only opens once the operative has been this far away (the raid starts right next to it).")]
+        public float armDistance = 0f;
         public Renderer beam, ring;
         public Light beaconLight;
 
@@ -18,7 +20,8 @@ namespace Zcom
         public bool PlayerInside { get; private set; }
         public float Distance { get; private set; }
         float progress, pulse;
-        bool ambushed;
+        bool ambushed, armed;
+        public bool Armed => armed;
         MaterialPropertyBlock mpb;
         static readonly int ColorId = Shader.PropertyToID("_Color");
 
@@ -28,9 +31,11 @@ namespace Zcom
         {
             var p = PlayerController.I;
             var gm = GameManager.I;
-            if (!p || !gm || gm.IsExtracted || gm.IsGameOver) return;
+            if (!p || !gm || gm.IsExtracted || gm.IsGameOver || gm.PreRaid) { progress = 0f; return; }
             Vector3 d = p.transform.position - transform.position; d.y = 0f;
             Distance = d.magnitude;
+            if (Distance > armDistance) armed = true;
+            if (!armed) { PlayerInside = false; return; }
             PlayerInside = Distance < radius && p.CanAct;
             float before = progress;
             progress = PlayerInside ? progress + Time.deltaTime : Mathf.Max(0f, progress - Time.deltaTime * 2f);
@@ -53,12 +58,16 @@ namespace Zcom
         void Ambush()
         {
             ambushed = true;
-            if (Hud.I) Hud.I.Banner("HIVE ALERTED", "The beacon drew them in. Hold the evac point!", "WARNING");
+            if (Hud.I) Hud.I.Banner("HIVE ALERTED", "The engines drew them in. Hold the door!", "WARNING");
             ProcAudio.Play("screech", 0.7f, 0f, 0.8f);
             for (int i = 0; i < 4; i++)
             {
                 float a = i * Mathf.PI * 0.5f + Random.Range(-0.4f, 0.4f);
                 Vector3 pos = transform.position + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * 16f;
+                pos.x = Mathf.Clamp(pos.x, -MapBuilder.HalfX + 3f, MapBuilder.HalfX - 3f);
+                pos.z = Mathf.Clamp(pos.z, -MapBuilder.HalfZ + 3f, MapBuilder.HalfZ - 3f);
+                if (!UnityEngine.AI.NavMesh.SamplePosition(pos, out var hit, 8f, UnityEngine.AI.NavMesh.AllAreas)) continue;
+                pos = hit.position;
                 var al = AlienFactory.Create(i == 3 ? AlienType.Spitter : AlienType.Skitter, pos, Quaternion.identity);
                 al.Alert(false);
             }
