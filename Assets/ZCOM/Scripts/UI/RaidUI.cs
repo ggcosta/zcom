@@ -31,7 +31,7 @@ namespace Zcom
             marker = UiKit.Node("EvacMarker", root, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(120, 60));
             markerIcon = UiKit.Img("Icon", marker, UiKit.Art("icon_extract"), Cyan, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 10), new Vector2(30, 30));
             markerIcon.preserveAspect = true;
-            UiKit.Label("Label", marker, UiKit.Spaced("EVAC"), 13, Cyan, TextAnchor.UpperCenter, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 1f), new Vector2(0, -8), new Vector2(120, 16), false);
+            UiKit.Label("Label", marker, UiKit.Spaced("KESTREL"), 13, Cyan, TextAnchor.UpperCenter, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 1f), new Vector2(0, -8), new Vector2(120, 16), false);
             markerDist = UiKit.Label("Dist", marker, "", 13, A(Cyan, 0.75f), TextAnchor.UpperCenter, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 1f), new Vector2(0, -24), new Vector2(120, 16), false);
 
             // extraction countdown (top centre, under the area name)
@@ -45,18 +45,19 @@ namespace Zcom
             extractFill.type = Image.Type.Filled; extractFill.fillMethod = Image.FillMethod.Horizontal;
             extractBox.gameObject.SetActive(false);
 
-            // pause menu
+            // pause menu (the R row only exists once the raid started)
             var pause = UiKit.Stretch("Pause", root);
             pauseGroup = pause.gameObject.AddComponent<CanvasGroup>();
             UiKit.Fill("Dim", pause, UiKit.White, new Color(0f, 0.01f, 0.025f, 0.72f));
             var pc = Card(pause, new Vector2(460, 330));
-            UiKit.Label("Kicker", pc, UiKit.Spaced("RAID SUSPENDED"), 14, Cyan, TextAnchor.MiddleCenter, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -28), new Vector2(420, 20), false);
+            pauseKicker = UiKit.Label("Kicker", pc, UiKit.Spaced("RAID SUSPENDED"), 14, Cyan, TextAnchor.MiddleCenter, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -28), new Vector2(420, 20), false);
             UiKit.Label("Title", pc, UiKit.Spaced("PAUSED"), 52, UiKit.TextColor, TextAnchor.MiddleCenter, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -70), new Vector2(420, 60), false);
-            var rows = new[] { ("ESC", "Resume"), ("R", "Restart raid"), ("H", "Controls"), ("Q", "Quit to desktop") };
+            var rows = new[] { ("ESC", "Resume"), ("R", "Abandon raid (gear lost)"), ("H", "Controls"), ("Q", "Quit to desktop") };
             for (int i = 0; i < rows.Length; i++)
             {
-                UiKit.KeyCap("Key", pc, rows[i].Item1, new Vector2(0.5f, 1f), new Vector2(0f, 0.5f), new Vector2(-120, -150 - i * 40), 15);
-                UiKit.Label("Action", pc, rows[i].Item2, 20, UiKit.TextColor, TextAnchor.MiddleLeft, new Vector2(0.5f, 1f), new Vector2(0f, 0.5f), new Vector2(-40, -150 - i * 40), new Vector2(240, 30), false);
+                var key = UiKit.KeyCap("Key", pc, rows[i].Item1, new Vector2(0.5f, 1f), new Vector2(0f, 0.5f), new Vector2(-120, -150 - i * 40), 15);
+                var lbl = UiKit.Label("Action", pc, rows[i].Item2, 20, UiKit.TextColor, TextAnchor.MiddleLeft, new Vector2(0.5f, 1f), new Vector2(0f, 0.5f), new Vector2(-40, -150 - i * 40), new Vector2(240, 30), false);
+                if (rows[i].Item1 == "R") abandonRow = new[] { key.gameObject, lbl.gameObject };
             }
             pause.gameObject.SetActive(false);
 
@@ -73,7 +74,7 @@ namespace Zcom
             summaryLoot = UiKit.Label("Loot", sc, "", 20, UiKit.TextColor, TextAnchor.UpperLeft, new Vector2(0.5f, 1f), new Vector2(0f, 1f), new Vector2(20, -170), new Vector2(240, 160), false);
             summaryStats.lineSpacing = summaryLoot.lineSpacing = 1.3f;
             UiKit.KeyCap("Key", sc, "R", new Vector2(0.5f, 0f), new Vector2(1f, 0.5f), new Vector2(-50, 40), 16);
-            UiKit.Label("Again", sc, UiKit.Spaced("NEW RAID"), 18, Cyan, TextAnchor.MiddleLeft, new Vector2(0.5f, 0f), new Vector2(0f, 0.5f), new Vector2(-38, 40), new Vector2(200, 26), false);
+            UiKit.Label("Again", sc, UiKit.Spaced("BACK TO THE SHIP"), 18, Cyan, TextAnchor.MiddleLeft, new Vector2(0.5f, 0f), new Vector2(0f, 0.5f), new Vector2(-38, 40), new Vector2(200, 26), false);
             sum.gameObject.SetActive(false);
         }
 
@@ -88,9 +89,16 @@ namespace Zcom
 
         bool Paused => GameFeel.Paused;
 
+        Text pauseKicker;
+        int invOpenFrame = -10;
+        GameObject[] abandonRow = new GameObject[0];
+
         void SetPaused(bool on)
         {
             GameFeel.Paused = on;
+            bool aboard = GameManager.InHub;
+            foreach (var g in abandonRow) if (g) g.SetActive(!aboard);
+            if (pauseKicker) pauseKicker.text = UiKit.Spaced(aboard ? "ABOARD THE KESTREL" : "RAID SUSPENDED");
             pauseGroup.gameObject.SetActive(on);
             pauseGroup.transform.SetAsLastSibling();
             Cursor.visible = on;
@@ -104,11 +112,14 @@ namespace Zcom
             var p = PlayerController.I;
             bool ended = gm && (gm.IsGameOver || gm.IsExtracted);
             bool invOpen = p && p.inventory && p.inventory.PanelOpen;
+            // the Esc that closes the inventory must not also pause (the inventory may update first and close this frame)
+            if (invOpen) invOpenFrame = Time.frameCount;
+            invOpen |= Time.frameCount - invOpenFrame <= 1;
 
             if (!ended && !invOpen && input.cancel) SetPaused(!Paused);
             if (Paused)
             {
-                if (input.restart && gm) gm.Restart();
+                if (input.restart && gm && !gm.PreRaid) { SetPaused(false); gm.AbandonRaid(); }
                 else if (input.scan)
                 {
 #if UNITY_EDITOR
@@ -126,7 +137,7 @@ namespace Zcom
             var gm = GameManager.I;
             var ez = gm ? gm.Extraction : null;
             var cam = CameraRig.I ? CameraRig.I.Cam : Camera.main;
-            bool show = ez && cam && !summaryShown && !Paused && !(PlayerController.I && PlayerController.I.inventory && PlayerController.I.inventory.PanelOpen);
+            bool show = ez && cam && ez.Armed && !summaryShown && !Paused && !GameManager.InHub && !(PlayerController.I && PlayerController.I.inventory && PlayerController.I.inventory.PanelOpen);
             marker.gameObject.SetActive(show);
             extractBox.gameObject.SetActive(show && ez.Progress01 > 0f);
             if (!show) return;
@@ -147,7 +158,7 @@ namespace Zcom
             if (ez.Progress01 > 0f)
             {
                 float left = ez.holdTime * (1f - ez.Progress01);
-                extractText.text = ez.PlayerInside ? $"{UiKit.Spaced("EXTRACTING")}   {left:0.0}s" : UiKit.Spaced("RETURN TO THE EVAC POINT");
+                extractText.text = ez.PlayerInside ? $"{UiKit.Spaced("EXTRACTING")}   {left:0.0}s" : UiKit.Spaced("GET BACK TO THE DOOR");
                 extractText.color = ez.PlayerInside ? Cyan : UiKit.Amber;
                 extractFill.fillAmount = ez.Progress01;
                 extractFill.color = ez.PlayerInside ? Cyan : UiKit.Amber;
@@ -168,7 +179,7 @@ namespace Zcom
             }
             float t = gm ? gm.RaidTime : 0f;
             string hex(Color c) => UiKit.Hex(c);
-            summaryKicker.text = UiKit.Spaced(extracted ? "EVAC SUCCESSFUL" : "OPERATIVE DOWN");
+            summaryKicker.text = UiKit.Spaced(extracted ? "BOARDED THE KESTREL" : "OPERATIVE DOWN");
             summaryKicker.color = extracted ? Cyan : UiKit.Danger;
             summaryTitle.text = UiKit.Spaced(extracted ? "EXTRACTED" : "KIA");
             summaryStats.text =

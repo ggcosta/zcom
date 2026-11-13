@@ -469,9 +469,9 @@ namespace Zcom
 
             // work order
             int total = gm.CampsTotal, cleared = gm.CampsCleared;
-            string order = total > 0 && cleared >= total ? "RETURN TO EVAC POINT" : "CLEAR XENO CAMPS";
+            string order = gm.PreRaid ? "EXIT VIA REAR DOOR" : total > 0 && cleared >= total ? "RETURN TO THE KESTREL" : "CLEAR XENO CAMPS";
             if (orderText.text != order) orderText.text = order;
-            string cnt = $"{cleared}/{total}";
+            string cnt = gm.PreRaid ? "" : $"{cleared}/{total}";
             if (orderCount.text != cnt) orderCount.text = cnt;
             for (int i = 0; i < boxes.Length; i++)
             {

@@ -76,7 +76,7 @@ namespace Zcom.EditorTools
             if (!assetPath.Replace('\\', '/').Contains("ZCOM/Resources/Textures/")) return;
             var t = (TextureImporter)assetImporter;
             string n = System.IO.Path.GetFileNameWithoutExtension(assetPath);
-            t.maxTextureSize = 2048;
+            t.maxTextureSize = assetPath.Contains("/Textures/Ship/") ? 4096 : 2048;     // the dropship hull is one 20 m object
             if (assetPath.Contains("/Terrain/")) t.wrapMode = TextureWrapMode.Repeat;
             t.mipmapEnabled = true;
             t.anisoLevel = 4;

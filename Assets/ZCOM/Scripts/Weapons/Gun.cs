@@ -149,7 +149,7 @@ namespace Zcom
             heat = Mathf.MoveTowards(heat, 0f, dt * 0.8f);
             swapT = Mathf.Max(0f, swapT - dt);
             bool uiOpen = owner && owner.inventory && owner.inventory.PanelOpen;
-            bool canAct = owner && owner.CanAct && swapT <= 0f && !uiOpen;
+            bool canAct = owner && owner.CanAct && swapT <= 0f && !uiOpen && !GameManager.InHub;   // weapons stay cold aboard the ship
 
             if (reloading) UpdateReload();
             else if (canAct)

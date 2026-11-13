@@ -942,7 +942,8 @@ namespace Zcom
                 var uv = threatHatch.uvRect; uv.x = -Time.unscaledTime * 1.2f; threatHatch.uvRect = uv;
             }
             int total = gm.CampsTotal, cleared = gm.CampsCleared;
-            string obj = total > 0 && cleared >= total
+            string obj = gm.PreRaid ? UiKit.Spaced("EXIT VIA REAR DOOR")
+                : total > 0 && cleared >= total
                 ? $"{UiKit.Spaced("KEPLER-7 SECURED")}  <color=#{UiKit.Hex(HealthCol)}>{cleared}/{total}</color>"
                 : $"{UiKit.Spaced("CLEAR XENO CAMPS")}  <color=#{UiKit.Hex(HealthCol)}>{cleared}/{total}</color>";
             if (objectiveText.text != obj) objectiveText.text = obj;

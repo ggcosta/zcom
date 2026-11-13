@@ -35,6 +35,7 @@ namespace Zcom.EditorTools
         {
             MarshalAnimSetup.EnsureController();
             PropSetup.EnsureMaterials();
+            PropSetup.EnsureShipMaterials();
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             EnsureFolder("Assets/ZCOM/Scenes");
             if (AssetDatabase.IsValidFolder(GenDir)) AssetDatabase.DeleteAsset(GenDir);
@@ -78,8 +79,53 @@ namespace Zcom.EditorTools
             fill.shadows = LightShadows.None;
 
             // ---------- Post processing ----------
+            CreatePostFx(GenDir + "/SlicePostFX.asset");
+
+            // ---------- Map ----------
+            var albedo = SaveTexture(MakeDeckAlbedo(), "DeckAlbedo", true);
+            var emissive = SaveTexture(MakeDeckEmission(), "DeckEmission", true);
+            var groundTex = SaveTexture(MakeGroundAlbedo(), "Regolith", true);
+            MapBuilder.RegisterAsset = o => AssetDatabase.CreateAsset(o, $"{GenDir}/{o.name}.{(o is TerrainData ? "asset" : "terrainlayer")}");
+            var map = MapBuilder.Build(groundTex, albedo, emissive);
+            MapBuilder.RegisterAsset = null;
+            if (MapBuilder.TerrainDataOut) EditorUtility.SetDirty(MapBuilder.TerrainDataOut);
+            AssetDatabase.SaveAssets();
+
+            // ---------- Player ----------
+            var player = PlayerFactory.Build(map.spawn);
+            player.transform.rotation = map.spawnRotation;
+
+            // ---------- Camera + managers ----------
+            CreateCamera(player);
+            var gm = CreateSystems(player);
+            gm.navSurface = map.surface;
+
+            // ---------- Persist generated materials ----------
+            PersistMaterials(GenDir);
+
+            EditorSceneManager.SaveScene(scene, ScenePath);
+            RegisterScenes();
+            AssetDatabase.SaveAssets();
+            Debug.Log($"[ZCOM] Vertical slice scene built at {ScenePath}. Press Play!");
+        }
+
+        /// <summary>Build settings: the ship instance first (the game starts aboard), then the raid map.</summary>
+        internal static void RegisterScenes()
+        {
+            var order = new[] { ShipSceneBuilder.ScenePath, ScenePath };
+            var scenes = new List<EditorBuildSettingsScene>();
+            foreach (var p in order)
+                if (File.Exists(p)) scenes.Add(new EditorBuildSettingsScene(p, true));
+            foreach (var s in EditorBuildSettings.scenes)
+                if (System.Array.IndexOf(order, s.path) < 0) scenes.Add(s);
+            EditorBuildSettings.scenes = scenes.ToArray();
+        }
+
+        /// <summary>Bloom, ACES, grade, vignette, CA and grain (shared by the raid map and the ship).</summary>
+        internal static VolumeProfile CreatePostFx(string assetPath, float exposure = 0.65f, float bloomIntensity = 0.85f)
+        {
             var profile = ScriptableObject.CreateInstance<VolumeProfile>();
-            AssetDatabase.CreateAsset(profile, GenDir + "/SlicePostFX.asset");
+            AssetDatabase.CreateAsset(profile, assetPath);
             T Add<T>() where T : VolumeComponent
             {
                 var c = profile.Add<T>(false);
@@ -88,14 +134,14 @@ namespace Zcom.EditorTools
                 return c;
             }
             var bloom = Add<Bloom>();
-            bloom.intensity.Override(0.85f);
+            bloom.intensity.Override(bloomIntensity);
             bloom.threshold.Override(1.05f);
             bloom.scatter.Override(0.72f);
             bloom.highQualityFiltering.Override(true);
             var tone = Add<Tonemapping>();
             tone.mode.Override(TonemappingMode.ACES);
             var color = Add<ColorAdjustments>();
-            color.postExposure.Override(0.65f);
+            color.postExposure.Override(exposure);
             color.contrast.Override(10f);
             color.saturation.Override(4f);
             // teal shadows / warm highlights: the classic complementary grade, kept subtle
@@ -118,28 +164,18 @@ namespace Zcom.EditorTools
             vol.isGlobal = true;
             vol.sharedProfile = profile;
 
-            // ---------- Map ----------
-            var albedo = SaveTexture(MakeDeckAlbedo(), "DeckAlbedo", true);
-            var emissive = SaveTexture(MakeDeckEmission(), "DeckEmission", true);
-            var groundTex = SaveTexture(MakeGroundAlbedo(), "Regolith", true);
-            MapBuilder.RegisterAsset = o => AssetDatabase.CreateAsset(o, $"{GenDir}/{o.name}.{(o is TerrainData ? "asset" : "terrainlayer")}");
-            var map = MapBuilder.Build(groundTex, albedo, emissive);
-            MapBuilder.RegisterAsset = null;
-            if (MapBuilder.TerrainDataOut) EditorUtility.SetDirty(MapBuilder.TerrainDataOut);
-            AssetDatabase.SaveAssets();
+            return profile;
+        }
 
-            // ---------- Player ----------
-            var player = PlayerFactory.Build(map.spawn);
-            player.transform.rotation = map.spawnRotation;
-
-            // ---------- Camera ----------
+        internal static Camera CreateCamera(PlayerController player, float farClip = 900f)
+        {
             var camGo = new GameObject("Main Camera");
             camGo.tag = "MainCamera";
             var cam = camGo.AddComponent<Camera>();
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = new Color(0.008f, 0.012f, 0.03f);
             cam.nearClipPlane = 1f;
-            cam.farClipPlane = 900f;
+            cam.farClipPlane = farClip;
             cam.fieldOfView = 30f;
             camGo.AddComponent<AudioListener>();
             var camData = cam.GetUniversalAdditionalCameraData();
@@ -147,12 +183,13 @@ namespace Zcom.EditorTools
             camData.antialiasing = AntialiasingMode.SubpixelMorphologicalAntiAliasing;
             var rig = camGo.AddComponent<CameraRig>();
             rig.target = player.transform;
-            {
-                Quaternion rot = Quaternion.Euler(rig.pitch, rig.yaw, 0f);
-                camGo.transform.SetPositionAndRotation(player.transform.position - rot * Vector3.forward * rig.distance, rot);
-            }
+            Quaternion rot = Quaternion.Euler(rig.pitch, rig.yaw, 0f);
+            camGo.transform.SetPositionAndRotation(player.transform.position - rot * Vector3.forward * rig.distance, rot);
+            return cam;
+        }
 
-            // ---------- Managers ----------
+        internal static GameManager CreateSystems(PlayerController player)
+        {
             var systems = new GameObject("Systems");
             var bank = systems.AddComponent<ShaderBank>();
             bank.lit = Shader.Find("Universal Render Pipeline/Lit");
@@ -163,22 +200,11 @@ namespace Zcom.EditorTools
             systems.AddComponent<ProcAudio>();
             systems.AddComponent<Hud>();
             var gm = systems.AddComponent<GameManager>();
-            gm.navSurface = map.surface;
             gm.player = player;
-
-            // ---------- Persist generated materials ----------
-            PersistMaterials();
-
-            EditorSceneManager.SaveScene(scene, ScenePath);
-            var scenes = new List<EditorBuildSettingsScene> { new EditorBuildSettingsScene(ScenePath, true) };
-            foreach (var s in EditorBuildSettings.scenes)
-                if (s.path != ScenePath) scenes.Add(s);
-            EditorBuildSettings.scenes = scenes.ToArray();
-            AssetDatabase.SaveAssets();
-            Debug.Log($"[ZCOM] Vertical slice scene built at {ScenePath}. Press Play!");
+            return gm;
         }
 
-        static void PersistMaterials()
+        internal static void PersistMaterials(string genDir)
         {
             var saved = new Dictionary<Material, string>();
             var names = new HashSet<string>();
@@ -193,14 +219,14 @@ namespace Zcom.EditorTools
                     string n = baseName;
                     int i = 1;
                     while (!names.Add(n)) n = baseName + "_" + (i++);
-                    string path = $"{GenDir}/Materials/{n}.mat";
+                    string path = $"{genDir}/Materials/{n}.mat";
                     AssetDatabase.CreateAsset(m, path);
                     saved[m] = path;
                 }
             }
         }
 
-        static void EnsureFolder(string path)
+        internal static void EnsureFolder(string path)
         {
             if (AssetDatabase.IsValidFolder(path)) return;
             string parent = Path.GetDirectoryName(path).Replace('\\', '/');
@@ -208,9 +234,9 @@ namespace Zcom.EditorTools
             AssetDatabase.CreateFolder(parent, Path.GetFileName(path));
         }
 
-        static Texture2D SaveTexture(Texture2D tex, string name, bool srgb)
+        internal static Texture2D SaveTexture(Texture2D tex, string name, bool srgb, string genDir = GenDir)
         {
-            string path = $"{GenDir}/Textures/{name}.png";
+            string path = $"{genDir}/Textures/{name}.png";
             File.WriteAllBytes(path, tex.EncodeToPNG());
             Object.DestroyImmediate(tex);
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
